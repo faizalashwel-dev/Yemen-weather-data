@@ -1,7 +1,6 @@
 from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
-import mysql.connector
-from db_config import DB_CONFIG
+from db_config import get_db_connection
 from datetime import datetime, timedelta
 import json
 import decimal
@@ -18,22 +17,17 @@ class EnhancedEncoder(json.JSONEncoder):
             return float(obj)
         return super().default(obj)
 
-def get_db_connection():
-    return mysql.connector.connect(**DB_CONFIG)
-
 @app.route('/')
 def index():
-    # Serve the dashboard directly
     return send_from_directory('.', 'dashboard.html')
 
 @app.route('/api/weather')
 def get_weather():
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
 
-        # FETCH FROM DATABASE ONLY (No external API calls here)
-        # We fetch all the scientific columns we just added
+        # FETCH FROM DATABASE
         query_current = """
             SELECT l.location_id, l.city_name, l.country, l.latitude, l.longitude,
                    cw.temperature, cw.humidity, cw.windspeed, cw.winddirection, cw.pressure, 
@@ -44,21 +38,20 @@ def get_weather():
             ORDER BY l.city_name ASC
         """
         cursor.execute(query_current)
-        cities = cursor.fetchall()
+        cities = [dict(row) for row in cursor.fetchall()]
 
         # History Fetch (Last 3 hours)
-        limit = (datetime.now() - timedelta(hours=3))
+        limit = (datetime.now() - timedelta(hours=3)).strftime('%Y-%m-%d %H:%M:%S')
         query_history = """
             SELECT l.city_name, wh.temperature, wh.observation_time 
             FROM weather_history wh 
             JOIN locations l ON wh.location_id = l.location_id 
-            WHERE wh.observation_time > %s 
+            WHERE wh.observation_time > ? 
             ORDER BY wh.observation_time ASC
         """
         cursor.execute(query_history, (limit,))
-        history = cursor.fetchall()
+        history = [dict(row) for row in cursor.fetchall()]
         
-        cursor.close()
         conn.close()
 
         response_data = {

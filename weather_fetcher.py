@@ -1,29 +1,22 @@
 import time
 import requests
-import mysql.connector
+import sqlite3
 from datetime import datetime
 import random
-from db_config import DB_CONFIG
+from db_config import get_db_connection
 
 # Configuration
 API_URL = "https://api.open-meteo.com/v1/forecast"
 POLL_INTERVAL = 300  # 5 minutes
-SIMULATION_MODE = False # Set to True if API is permanently blocked
-
-def get_db_connection():
-    return mysql.connector.connect(**DB_CONFIG)
+SIMULATION_MODE = False 
 
 def fetch_weather_batch(locations):
-    """
-    Fetch ALL scientific data in a single batch call.
-    """
     if SIMULATION_MODE:
         return generate_simulated_data(locations)
 
     lats = ",".join([str(loc['latitude']) for loc in locations])
     lons = ",".join([str(loc['longitude']) for loc in locations])
     
-    # Comprehensive parameter list
     params = {
         "latitude": lats,
         "longitude": lons,
@@ -45,9 +38,6 @@ def fetch_weather_batch(locations):
         return generate_simulated_data(locations)
 
 def generate_simulated_data(locations):
-    """
-    Creates realistic sensor data when API is offline.
-    """
     results = []
     for loc in locations:
         results.append({
@@ -70,15 +60,11 @@ def generate_simulated_data(locations):
     return results
 
 def store_weather_data(cursor, location_id, country, current_api):
-    """
-    Updates both current and history with full scientific suite.
-    """
     if not current_api: return
     
     c = current_api
     obs_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     
-    # Mapping table for convenience
     data = {
         'location_id': location_id,
         'country': country,
@@ -97,34 +83,41 @@ def store_weather_data(cursor, location_id, country, current_api):
         'solar': c.get('shortwave_radiation', 0)
     }
 
-    cols = "(location_id, country, observation_time, temperature, humidity, windspeed, winddirection, weathercode, is_day, pressure, uv_index, dew_point, visibility, cloud_cover, solar_rad)"
-    vals = "(%(location_id)s, %(country)s, %(obs_time)s, %(temp)s, %(hum)s, %(wind_s)s, %(wind_d)s, %(code)s, %(day)s, %(pres)s, %(uv)s, %(dew)s, %(vis)s, %(cloud)s, %(solar)s)"
+    # SQLite compatible UPSERT using INSERT OR REPLACE (simplest across versions)
+    # Note: INSERT OR REPLACE deletes the old row and inserts new. 
+    # For history we act as log.
     
-    update_str = """
-        country=VALUES(country), observation_time=VALUES(observation_time), 
-        temperature=VALUES(temperature), humidity=VALUES(humidity), 
-        windspeed=VALUES(windspeed), winddirection=VALUES(winddirection), 
-        weathercode=VALUES(weathercode), is_day=VALUES(is_day), 
-        pressure=VALUES(pressure), uv_index=VALUES(uv_index), 
-        dew_point=VALUES(dew_point), visibility=VALUES(visibility), 
-        cloud_cover=VALUES(cloud_cover), solar_rad=VALUES(solar_rad)
-    """
-
+    # 1. Update Current Weather
+    cols = "location_id, observation_time, temperature, humidity, windspeed, winddirection, weathercode, is_day, pressure, uv_index, dew_point, visibility, cloud_cover, solar_rad"
+    vals = ":location_id, :obs_time, :temp, :hum, :wind_s, :wind_d, :code, :day, :pres, :uv, :dew, :vis, :cloud, :solar"
+    
+    # We use explicit Upsert for Current Weather to keep ID stable if needed, but Replace is fine.
+    # Actually, let's use standard INSERT OR REPLACE for simplicity
     try:
-        cursor.execute(f"INSERT INTO current_weather {cols} VALUES {vals} ON DUPLICATE KEY UPDATE {update_str}", data)
-        cursor.execute(f"INSERT IGNORE INTO weather_history {cols} VALUES {vals}", data)
+        # Delete old entry for this location to ensure single current record ?? 
+        # No, schema has UNIQUE(location_id). INSERT OR REPLACE handles it.
+        cursor.execute(f"INSERT OR REPLACE INTO current_weather ({cols}) VALUES ({vals})", data)
+        
+        # 2. Insert into History (Ignore duplicates if any)
+        cursor.execute(f"INSERT OR IGNORE INTO weather_history ({cols}) VALUES ({vals})", data)
+        
     except Exception as e:
         print(f"Store Error for ID {location_id}: {e}")
 
 def main():
-    print("!!! SCIENTIFIC MET-BOT ACTIVE (BATCH MODE) !!!")
+    print("!!! SCIENTIFIC MET-BOT ACTIVE (SQLITE MODEL) !!!")
+    
+    # Ensure DB is initialized
+    import init_db
+    init_db.init_db()
+
     while True:
         try:
             conn = get_db_connection()
-            cursor = conn.cursor(dictionary=True)
+            cursor = conn.cursor()
             
             cursor.execute("SELECT * FROM locations")
-            locations = cursor.fetchall()
+            locations = [dict(row) for row in cursor.fetchall()]
             
             if locations:
                 print(f"[{datetime.now().strftime('%H:%M:%S')}] Syncing {len(locations)} locations...")
@@ -132,15 +125,17 @@ def main():
                 
                 for i, loc in enumerate(locations):
                     city_data = results[i].get('current') if i < len(results) else None
-                    store_weather_data(cursor, loc['location_id'], loc['country'], city_data)
+                    if city_data:
+                        store_weather_data(cursor, loc['location_id'], loc['country'], city_data)
                 
                 conn.commit()
                 print("Sync Completed successfully.")
             
-            cursor.close()
             conn.close()
         except Exception as e:
             print(f"Main Loop Error: {e}")
+            import traceback
+            traceback.print_exc()
             
         time.sleep(POLL_INTERVAL)
 
