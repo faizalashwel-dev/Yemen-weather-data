@@ -54,6 +54,16 @@ def get_weather():
         
         conn.close()
 
+        # Fix Date Format for SQLite (Ensure ISO 8601 with 'T' separator)
+        # SQLite stores as "YYYY-MM-DD HH:MM:SS", Frontend needs "YYYY-MM-DDTHH:MM:SS"
+        for row in cities:
+            if row.get('observation_time') and isinstance(row['observation_time'], str):
+                row['observation_time'] = row['observation_time'].replace(' ', 'T')
+        
+        for row in history:
+            if row.get('observation_time') and isinstance(row['observation_time'], str):
+                row['observation_time'] = row['observation_time'].replace(' ', 'T')
+
         response_data = {
             'status': 'success',
             'current': cities,
