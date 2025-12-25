@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>MET-ANALYTICS COMMAND CENTER // YEMEN</title>
+    <!-- STABLE LIBS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.0.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.2.0"></script>
+    <!-- MAP ENGINE -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        :root {
+            --bg: #020202;
+            --panel: #0a0a0a;
+            --accent: #00ffff;
+            --border: #1a1a1a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Consolas', monospace;
+            color: #fff;
+        }
+
+        body {
+            background: var(--bg);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            height: 50px;
+            border-bottom: 2px solid var(--accent);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            background: #000;
+            z-index: 100;
+            justify-content: space-between;
+        }
+
+        .layout {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            background: #050505;
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+        }
+
+        .city-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #111;
+            cursor: pointer;
+            transition: 0.1s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .city-item:hover {
+            background: #0a0a0a;
+            border-left: 2px solid var(--accent);
+        }
+
+        .city-item.active {
+            background: #111;
+            border-left: 4px solid var(--accent);
+        }
+
+        .main-stage {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+            height: 100%;
+        }
+
+        .top-deck {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 12px;
+            height: 350px;
+            min-height: 350px;
+        }
+
+        .stats-col {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            padding: 10px;
+            text-align: center;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-radius: 4px;
+            border-left: 3px solid #333;
+            transition: 0.3s;
+        }
+
+        .card:hover {
+            border-left-color: var(--accent);
+            background: #111;
+        }
+
+        .card .label {
+            font-size: 0.6rem;
+            color: #555;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .card .val {
+            font-size: 1.2rem;
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        .map-wrapper {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+            height: 100%;
+            border-radius: 4px;
+        }
+
+        .map-scanner {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 40%;
+            height: 100%;
+            background: linear-gradient(to right, transparent, rgba(0, 255, 255, 0.2), rgba(0, 255, 255, 0.4), rgba(0, 255, 255, 0.2), transparent);
+            pointer-events: none;
+            z-index: 1000;
+            animation: scan 10s linear infinite;
+            filter: blur(4px);
+        }
+
+        @keyframes scan {
+            0% {
+                left: -100%;
+            }
+
+            100% {
+                left: 150%;
+            }
+        }
+
+        canvas.wind-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 1500;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+            background: #000;
+        }
+
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            height: 260px;
+            min-height: 260px;
+        }
+
+        .chart-wrap {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            padding: 8px;
+            position: relative;
+            height: 100%;
+            overflow: hidden;
+            border-radius: 4px;
+        }
+
+        .timeline-box {
+            height: 180px;
+            min-height: 180px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            padding: 8px;
+            overflow: hidden;
+            border-radius: 4px;
+        }
+
+        canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        #sync-tag {
+            font-size: 0.7rem;
+            color: #0f0;
+        }
+
+        .error-banner {
+            background: #f00;
+            color: #fff;
+            padding: 5px;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            display: none;
+            z-index: 1000;
+        }
+
+        /* Tactical Tooltip Style */
+        .tactical-tooltip {
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            font-family: 'Consolas', monospace;
+            padding: 5px 10px;
+            font-size: 0.75rem;
+            border-radius: 0;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+        }
+
+        .leaflet-tooltip-pane {
+            z-index: 650;
+        }
+
+        .marker-pulse {
+            width: 8px;
+            height: 8px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="api-error" class="error-banner">OFFLINE: NO CONNECTION TO BACKEND SERVER</div>
+    <header>
+        <div class="logo">ATMOS-ALPHA // TACTICAL_ISR_GRID v11.0 // DEEP_SCAN</div>
+        <div id="sync-tag" class="sync-tag">CONNECTING_LINK...</div>
+    </header>
+
+    <div class="layout">
+        <div class="sidebar" id="city-sidebar"></div>
+        <div class="main-stage">
+
+            <div class="top-deck">
+                <div class="stats-col">
+                    <div class="card">
+                        <div class="label">TEMPERATURE</div>
+                        <div class="val" id="st-temp">--</div>
+                    </div>
+                    <div class="card">
+                        <div class="label">HUMIDITY</div>
+                        <div class="val" id="st-hum">--</div>
+                    </div>
+                    <div class="card">
+                        <div class="label">BARO_PRESSURE</div>
+                        <div class="val" id="st-pres">--</div>
+                    </div>
+                    <div class="card">
+                        <div class="label">VISIBILITY</div>
+                        <div class="val" id="st-vis">--</div>
+                    </div>
+                </div>
+                <div class="map-wrapper">
+                    <div class="map-scanner"></div>
+                    <div id="map"></div>
+                </div>
+            </div>
+
+            <div class="charts-row">
+                <div class="chart-wrap">
+                    <div style="font-size:0.6rem; color:#444; margin-bottom:3px;">ATMOSPHERIC RADAR PROFILING</div>
+                    <canvas id="radarChart"></canvas>
+                </div>
+                <div class="chart-wrap">
+                    <div style="font-size:0.6rem; color:#444; margin-bottom:3px;">REGIONAL CLOUD DENSITY (OCTANTS)</div>
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+
+            <div class="timeline-box">
+                <div style="font-size:0.6rem; color:#444; margin-bottom:3px;">TEMPORAL ENERGY GRADIENT (3H WINDOW)</div>
+                <canvas id="lineChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedId = null;
+        let instances = {};
+        let map, geoLayer, markers = {};
+        const GEO_URL = 'https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/YEM/ADM1/geoBoundaries-YEM-ADM1.geojson';
+
+        // ENHANCED NAME MAPPING FOR GEOJSON SYNCHRONIZATION
+        const NAME_MAP = {
+            "Amran Governorate": "Amran",
+            "Abyan Governorate": "Abyan",
+            "Ad Dali' Governorate": "Al Dali'",
+            "Al Bayda' Governorate": "Al Bayda'",
+            "Al Hudaydah Governorate": "Al Hudaydah",
+            "Al Jawf Governorate": "Al Jawf",
+            "Al Mahrah Governorate": "Al Mahrah",
+            "Al Mahwit Governorate": "Al Mahwit",
+            "Dhamar Governorate": "Dhamar",
+            "Hadhramaut": "Mukalla",
+            "Hajjah Governorate": "Hajjah",
+            "Ibb Governorate": "Ibb",
+            "Lahij Governorate": "Lahij",
+            "Ma'rib Governorate": "Ma'rib",
+            "Raymah Governorate": "Raymah",
+            "Sa'dah Governorate": "Sa'dah",
+            "Sanʿaʾ": "Sana'a",
+            "Sanʿaʾ Governorate": "Sana'a",
+            "Shabwah Governorate": "Shabwah",
+            "Ta'izz Governorate": "Taiz",
+            "‘Adan Governorate": "Aden",
+            "Amanat Al Asimah": "Sana'a"
+        };
+
+        function normalizeName(n) {
+            return n.replace(/Governorate/g, '').replace(/[ʿ‘]|['`]/g, '').trim().toLowerCase();
+        }
+
+        function getTempColor(t) {
+            if (!t && t !== 0) return '#222';
+            if (t > 33) return '#ff3300';
+            if (t > 27) return '#ff9900';
+            if (t > 20) return '#00ffff';
+            if (t > 14) return '#0088ff';
+            return '#0044ff';
+        }
+
+        let windEngine = null;
+        class WindEngine {
+            constructor(map) {
+                this.map = map;
+                this.canvas = document.createElement('canvas');
+                this.canvas.className = 'wind-layer';
+                document.querySelector('.map-wrapper').appendChild(this.canvas);
+                this.ctx = this.canvas.getContext('2d');
+                this.particles = [];
+                this.data = [];
+
+                window.addEventListener('resize', () => this.resize());
+                map.on('move moveend zoomend', () => this.resize());
+                this.resize();
+                this.loop();
+            }
+            resize() {
+                const rect = this.map.getContainer().getBoundingClientRect();
+                this.canvas.width = rect.width;
+                this.canvas.height = rect.height;
+                this.particles = []; // Clear to avoid ghosting
+            }
+            update(cities) {
+                this.data = cities.filter(c => c.windspeed > 0);
+            }
+            loop() {
+                // FADE TRAILS WITHOUT ADDING BLACK (fixes the "dark map" bug)
+                this.ctx.globalCompositeOperation = 'destination-out';
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.globalCompositeOperation = 'source-over';
+
+                // Spawn (INCREASED DENSITY)
+                if (this.particles.length < 400 && this.data.length > 0) {
+                    for (let i = 0; i < 3; i++) {
+                        const city = this.data[Math.floor(Math.random() * this.data.length)];
+                        const pt = this.map.latLngToContainerPoint([city.latitude, city.longitude]);
+                        this.particles.push({
+                            x: pt.x + (Math.random() - 0.5) * 80,
+                            y: pt.y + (Math.random() - 0.5) * 80,
+                            v: city.windspeed * 0.2 + 0.8,
+                            a: (city.winddirection - 90) * Math.PI / 180,
+                            life: 1.2
+                        });
+                    }
+                }
+
+                this.ctx.lineWidth = 2;
+                this.ctx.shadowBlur = 4;
+                this.ctx.shadowColor = '#0ff';
+
+                this.particles.forEach((p, i) => {
+                    const dx = Math.cos(p.a) * p.v;
+                    const dy = Math.sin(p.a) * p.v;
+                    this.ctx.beginPath();
+                    this.ctx.strokeStyle = `rgba(0, 255, 255, ${p.life * 1.0})`;
+                    this.ctx.moveTo(p.x, p.y);
+                    p.x += dx; p.y += dy;
+                    this.ctx.lineTo(p.x, p.y);
+                    this.ctx.stroke();
+                    p.life -= 0.008;
+                    if (p.life <= 0) this.particles.splice(i, 1);
+                });
+                this.ctx.shadowBlur = 0; // Reset for performance
+
+                requestAnimationFrame(() => this.loop());
+            }
+        }
+
+        async function initMap() {
+            if (map) return;
+            map = L.map('map', { zoomControl: false, attributionControl: false }).setView([15.5, 48.0], 6);
+
+            // CLEAN DARK TILES
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+            // FETCH TACTICAL SHADING (Governorates)
+            try {
+                const res = await fetch(GEO_URL);
+                const geoData = await res.json();
+
+                geoLayer = L.geoJSON(geoData, {
+                    style: feature => {
+                        const govName = feature.properties.shapeName;
+                        const mappedName = NAME_MAP[govName] || govName;
+                        const normGov = normalizeName(govName);
+
+                        const city = lastData.find(c =>
+                            c.city_name === mappedName ||
+                            normalizeName(c.city_name) === normGov
+                        );
+
+                        return {
+                            fillColor: city ? getTempColor(city.temperature) : '#111',
+                            weight: city ? 2.5 : 1,
+                            opacity: 1,
+                            color: city ? '#fff' : '#333',
+                            fillOpacity: city ? 0.6 : 0.05,
+                            transition: '0.4s'
+                        };
+                    },
+                    onEachFeature: (feature, layer) => {
+                        const govName = feature.properties.shapeName;
+                        const mappedName = NAME_MAP[govName] || govName;
+                        const normGov = normalizeName(govName);
+
+                        layer.on({
+                            mouseover: (e) => {
+                                const city = lastData.find(c =>
+                                    c.city_name === mappedName ||
+                                    normalizeName(c.city_name) === normGov
+                                );
+                                layer.setStyle({ fillOpacity: 0.8, weight: 3, color: '#fff' });
+
+                                const content = city ? `
+                                    <div style="text-align:left; min-width:160px;">
+                                        <b style="color:${getTempColor(city.temperature)}; font-size:1.1em; border-bottom:1px solid #333; display:block; margin-bottom:5px; padding-bottom:2px;">${mappedName.toUpperCase()} GOV</b>
+                                        <div style="display:flex; justify-content:space-between; margin-bottom:2px;"><span>MET_TEMP:</span> <b style="color:#fff;">${Math.round(city.temperature)}°C</b></div>
+                                        <div style="display:flex; justify-content:space-between; margin-bottom:2px;"><span>HUMIDITY:</span> <b style="color:#fff;">${Math.round(city.humidity)}%</b></div>
+                                        <div style="display:flex; justify-content:space-between; margin-bottom:2px;"><span>WIND_SPD:</span> <b style="color:#fff;">${Math.round(city.windspeed)}km/h</b></div>
+                                        <div style="display:flex; justify-content:space-between;"><span>BARO_PRES:</span> <b style="color:#fff;">${Math.round(city.pressure)}hPa</b></div>
+                                        <div style="font-size:0.6rem; color:#666; margin-top:5px; border-top:1px solid #222; padding-top:3px;">STATUS: LINK_ACTIVE</div>
+                                    </div>
+                                ` : `
+                                    <div style="text-align:left; min-width:140px;">
+                                        <b style="color:#555; border-bottom:1px solid #222; display:block; margin-bottom:5px;">${mappedName}</b>
+                                        <span style="color:#444;">NO SENSOR UPLINK</span>
+                                    </div>
+                                `;
+
+                                layer.bindTooltip(content, { sticky: true, className: 'tactical-tooltip', direction: 'top', offset: [0, -10] }).openTooltip();
+                            },
+                            mouseout: (e) => {
+                                const city = lastData.find(c =>
+                                    c.city_name === mappedName ||
+                                    normalizeName(c.city_name) === normGov
+                                );
+                                layer.setStyle({
+                                    fillOpacity: city ? 0.4 : 0.05,
+                                    weight: city ? 2 : 1,
+                                    color: city ? '#fff' : '#333'
+                                });
+                                layer.closeTooltip();
+                            },
+                            click: (e) => {
+                                const city = lastData.find(c =>
+                                    c.city_name === mappedName ||
+                                    normalizeName(c.city_name) === normGov
+                                );
+                                if (city) selectCity(city);
+                            }
+                        });
+                    }
+                }).addTo(map);
+
+                if (!windEngine) windEngine = new WindEngine(map);
+            } catch (e) {
+                console.error("MAP_GEO_ERR", e);
+                // Fallback: If GeoJSON fails, the map will still show tiles and markers.
+            }
+        }
+
+        let lastData = [];
+
+        async function update() {
+            try {
+                const res = await fetch('/api/weather');
+                const data = await res.json();
+                lastData = data.current;
+
+                document.getElementById('api-error').style.display = 'none';
+                document.getElementById('sync-tag').innerText = 'SECURE LINK ACTIVE // ' + data.server_time;
+
+                if (!selectedId && data.current.length > 0) selectedId = data.current[0].location_id;
+
+                if (!map) {
+                    await initMap();
+                } else if (geoLayer) {
+                    geoLayer.setStyle(feature => {
+                        const govName = feature.properties.shapeName;
+                        const mappedName = NAME_MAP[govName] || govName;
+                        const normGov = normalizeName(govName);
+                        const city = lastData.find(c =>
+                            c.city_name === mappedName ||
+                            normalizeName(c.city_name) === normGov
+                        );
+                        return {
+                            fillColor: city ? getTempColor(city.temperature) : '#111',
+                            weight: city ? 2.5 : 1,
+                            color: city ? '#fff' : '#333',
+                            fillOpacity: city ? 0.6 : 0.05
+                        };
+                    });
+                }
+
+                if (windEngine) windEngine.update(data.current);
+
+                renderSidebar(data.current);
+                renderStats(data.current);
+                renderVisuals(data.current, data.history);
+                updateMarkers(data.current);
+
+            } catch (e) {
+                document.getElementById('api-error').style.display = 'block';
+                document.getElementById('sync-tag').innerText = 'SECURE LINK FAILURE';
+            }
+        }
+
+        function renderSidebar(cities) {
+            const list = document.getElementById('city-sidebar');
+            list.innerHTML = '';
+            cities.forEach(c => {
+                const div = document.createElement('div');
+                div.className = `city-item ${c.location_id === selectedId ? 'active' : ''}`;
+                div.onclick = () => { selectCity(c); };
+                div.innerHTML = `<span>${c.city_name}</span><span style="color:var(--accent);">${Math.round(c.temperature || 0)}°</span>`;
+                list.appendChild(div);
+            });
+        }
+
+        function selectCity(city) {
+            selectedId = city.location_id;
+            map.flyTo([city.latitude, city.longitude], 8, { duration: 1.2 });
+            update();
+        }
+
+        function updateMarkers(cities) {
+            cities.forEach(c => {
+                if (markers[c.location_id]) {
+                    markers[c.location_id].setLatLng([c.latitude, c.longitude]);
+                } else {
+                    const icon = L.divIcon({ className: 'leaflet-div-icon', html: '<div class="marker-pulse"></div>' });
+                    markers[c.location_id] = L.marker([c.latitude, c.longitude], { icon }).addTo(map)
+                        .on('click', () => selectCity(c));
+                }
+            });
+        }
+
+        function renderStats(cities) {
+            const c = cities.find(x => x.location_id === selectedId) || cities[0];
+            if (!c) return;
+            document.getElementById('st-temp').innerText = Math.round(c.temperature || 0) + '°C';
+            document.getElementById('st-hum').innerText = Math.round(c.humidity || 0) + '%';
+            document.getElementById('st-pres').innerText = Math.round(c.pressure || 0) + ' hPa';
+            document.getElementById('st-vis').innerText = (c.visibility / 1000).toFixed(1) + 'km';
+        }
+
+        function renderVisuals(current, history) {
+            const sel = current.find(x => x.location_id === selectedId) || current[0];
+
+            // 1. Radar
+            const radarData = {
+                labels: ['Heat', 'Wind', 'Hum', 'Cloud', 'UV'],
+                datasets: [{
+                    label: sel.city_name,
+                    data: [sel.temperature, sel.windspeed, sel.humidity, sel.cloud_cover, sel.uv_index * 10],
+                    backgroundColor: 'rgba(0, 255, 255, 0.15)',
+                    borderColor: '#00ffff', borderWidth: 2
+                }]
+            };
+            draw('radarChart', 'radar', radarData, { scales: { r: { grid: { color: '#222' }, angleLines: { color: '#222' }, ticks: { display: false } } } });
+
+            // 2. Bar
+            const barLabels = current.slice(0, 8).map(x => x.city_name);
+            const barData = {
+                labels: barLabels,
+                datasets: [{ label: 'Cloud Cover %', data: current.slice(0, 8).map(x => x.cloud_cover), backgroundColor: 'rgba(0,255,255,0.7)' }]
+            };
+            draw('barChart', 'bar', barData, { indexAxis: 'y', scales: { x: { grid: { color: '#111' } }, y: { grid: { display: false } } } });
+
+            // 3. Line
+            const cities = [...new Set(history.map(h => h.city_name))].slice(0, 4);
+            const lineData = {
+                datasets: cities.map((name, i) => ({
+                    label: name,
+                    data: history.filter(h => h.city_name === name).map(h => ({ x: h.observation_time, y: h.temperature })),
+                    borderColor: ['#0ff', '#f0f', '#0f0', '#ff0'][i],
+                    borderWidth: 2, pointRadius: 0, tension: 0.3
+                }))
+            };
+            draw('lineChart', 'line', lineData, { scales: { x: { type: 'time', grid: { color: '#111' } }, y: { grid: { color: '#111' } } } });
+        }
+
+        function draw(id, type, data, options) {
+            if (instances[id]) {
+                instances[id].data = data;
+                instances[id].update('none');
+            } else {
+                const ctx = document.getElementById(id).getContext('2d');
+                instances[id] = new Chart(ctx, {
+                    type: type, data: data,
+                    options: { ...options, responsive: true, maintainAspectRatio: false, animation: { duration: 0 } }
+                });
+            }
+        }
+
+        setInterval(update, 3000); // 3 sec heartbeat
+        window.onload = update;
+    </script>
+</body>
+
+</html>
