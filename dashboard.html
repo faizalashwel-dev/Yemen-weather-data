@@ -499,9 +499,11 @@
             }
 
             .info-box {
-                width: 180px;
-                left: -150px;
-                right: auto;
+                width: calc(100vw - 40px);
+                max-width: 280px;
+                right: 0;
+                left: auto;
+                top: 30px;
             }
         }
     </style>
@@ -949,6 +951,8 @@
                     x: {
                         type: 'time',
                         time: { unit: 'hour', displayFormats: { hour: 'HH:mm' } },
+                        min: luxon.DateTime.now().minus({ hours: 3 }).toISO(),
+                        max: luxon.DateTime.now().toISO(),
                         grid: { color: '#111' },
                         ticks: { color: '#444', font: { size: 9 } }
                     },
