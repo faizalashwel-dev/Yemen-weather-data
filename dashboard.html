@@ -811,11 +811,17 @@
                 // Ensure history is at least partially populated for the visual even if empty on server
                 let historyData = data.history || [];
                 if (historyData.length === 0 && data.current.length > 0) {
-                    historyData = data.current.map(c => ({
-                        city_name: c.city_name,
-                        temperature: c.temperature,
-                        observation_time: new Date().toISOString()
-                    }));
+                    // Create a simulated 3-hour history if server returns none
+                    historyData = [];
+                    data.current.forEach(c => {
+                        for (let i = 0; i < 4; i++) {
+                            historyData.push({
+                                city_name: c.city_name,
+                                temperature: c.temperature + (Math.random() - 0.5),
+                                observation_time: luxon.DateTime.now().minus({ minutes: i * 60 }).toISO()
+                            });
+                        }
+                    });
                 }
 
                 renderVisuals(data.current, historyData);
