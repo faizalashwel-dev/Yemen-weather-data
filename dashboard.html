@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MET-ANALYTICS COMMAND CENTER // YEMEN</title>
     <!-- STABLE LIBS -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1"></script>
@@ -30,10 +31,11 @@
 
         body {
             background: var(--bg);
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
 
         header {
@@ -51,7 +53,6 @@
             flex: 1;
             display: grid;
             grid-template-columns: 260px 1fr;
-            overflow: hidden;
         }
 
         .sidebar {
@@ -183,7 +184,7 @@
 
         .charts-row {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1.2fr 1fr;
             gap: 12px;
             height: 260px;
             min-height: 260px;
@@ -255,6 +256,62 @@
             border-radius: 50%;
             box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
         }
+
+        /* INFO ICON ENGINE */
+        .info-icon {
+            position: absolute;
+            top: 5px;
+            right: 8px;
+            width: 14px;
+            height: 14px;
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: help;
+            font-size: 10px;
+            font-weight: bold;
+            color: var(--accent);
+            z-index: 1001;
+            transition: 0.2s;
+        }
+
+        .info-icon:hover {
+            background: var(--accent);
+            color: #000;
+            border-color: #fff;
+        }
+
+        .info-box {
+            position: absolute;
+            top: 25px;
+            right: 0;
+            width: 220px;
+            background: rgba(10, 10, 10, 0.95);
+            border: 1px solid var(--accent);
+            padding: 10px;
+            font-size: 0.7rem;
+            line-height: 1.3;
+            color: #ddd;
+            display: none;
+            z-index: 2000;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.8);
+            border-radius: 4px;
+        }
+
+        .info-icon:hover+.info-box {
+            display: block;
+        }
+
+        .info-box b {
+            color: var(--accent);
+            display: block;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+        }
     </style>
 </head>
 
@@ -297,20 +354,157 @@
             <div class="charts-row">
                 <div class="chart-wrap">
                     <div style="font-size:0.6rem; color:#444; margin-bottom:3px;">ATMOSPHERIC RADAR PROFILING</div>
+                    <div class="info-icon">!</div>
+                    <div class="info-box">
+                        <b>Radar Scan</b>
+                        A multi-factor weather analysis. The shape grows as conditions like high heat, strong wind, or
+                        humidity become more intense in the selected city.
+                    </div>
                     <canvas id="radarChart"></canvas>
                 </div>
                 <div class="chart-wrap">
-                    <div style="font-size:0.6rem; color:#444; margin-bottom:3px;">REGIONAL CLOUD DENSITY (OCTANTS)</div>
+                    <div style="font-size:0.6rem; color:#444; margin-bottom:3px;">REGIONAL UV THREAT SPECTRUM</div>
+                    <div class="info-icon">!</div>
+                    <div class="info-box">
+                        <b>UV Spectrum</b>
+                        Measures solar radiation across Yemen. Large colored segments indicate dangerous UV levels that
+                        require sun protection.
+                    </div>
+                    <canvas id="polarChart"></canvas>
+                </div>
+                <div class="chart-wrap">
+                    <div style="font-size:0.6rem; color:#444; margin-bottom:3px;">REGIONAL CLOUD_DENSITY (OCTANTS)</div>
+                    <div class="info-icon">!</div>
+                    <div class="info-box">
+                        <b>Cloud Coverage</b>
+                        Compares sky density across different regions. Higher bars mean more overcast conditions, while
+                        low bars mean clear skies.
+                    </div>
                     <canvas id="barChart"></canvas>
                 </div>
             </div>
 
-            <div class="timeline-box">
+            <div class="timeline-box" style="position:relative;">
                 <div style="font-size:0.6rem; color:#444; margin-bottom:3px;">TEMPORAL ENERGY GRADIENT (3H WINDOW)</div>
+                <div class="info-icon" style="top:8px; right:12px;">!</div>
+                <div class="info-box" style="top:28px; right:8px;">
+                    <b>Temperature Trend</b>
+                    A historical log showing how the temperature has climbed or dropped over the last few hours for the
+                    main cities.
+                </div>
                 <canvas id="lineChart"></canvas>
             </div>
         </div>
     </div>
+
+    <style>
+        /* MOBILE OPTIMIZATIONS (RESPONSIVE ENGINE) */
+        @media (max-width: 768px) {
+            body {
+                overflow-y: auto;
+                height: auto;
+            }
+
+            .logo {
+                font-size: 0.7rem;
+            }
+
+            .layout {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .sidebar {
+                border-right: none;
+                border-bottom: 2px solid var(--accent);
+                max-height: none;
+                order: 1;
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 5px;
+                padding: 10px;
+                background: #000;
+            }
+
+            .city-item {
+                flex-direction: column;
+                justify-content: center;
+                text-align: center;
+                padding: 8px 5px;
+                background: var(--panel);
+                border: 1px solid var(--border);
+                border-radius: 4px;
+                min-height: 70px;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .city-item span {
+                display: block;
+                font-size: 0.7rem;
+                margin-bottom: 4px;
+            }
+
+            .city-item.active {
+                border: 1px solid var(--accent);
+                border-left: 1px solid var(--accent);
+                background: #111;
+            }
+
+            .main-stage {
+                padding: 10px;
+                order: 2;
+                height: auto;
+                overflow: visible;
+            }
+
+            .top-deck {
+                grid-template-columns: 1fr;
+                height: auto;
+                min-height: auto;
+            }
+
+            .stats-col {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 5px;
+            }
+
+            .card {
+                padding: 8px;
+                height: 60px;
+            }
+
+            .card .val {
+                font-size: 1rem;
+            }
+
+            .map-wrapper {
+                height: 300px;
+                min-height: 300px;
+            }
+
+            .charts-row {
+                grid-template-columns: 1fr;
+                height: auto;
+                min-height: auto;
+                gap: 10px;
+            }
+
+            .chart-wrap {
+                height: 240px;
+            }
+
+            .timeline-box {
+                height: 220px;
+            }
+
+            .info-box {
+                width: 180px;
+                left: -150px;
+                right: auto;
+            }
+        }
+    </style>
 
     <script>
         let selectedId = null;
@@ -357,6 +551,35 @@
             return '#0044ff';
         }
 
+        // TACTICAL UTILITY: POINT-IN-POLYGON CHECK
+        function isPointInPolygon(latlng, layer) {
+            if (!layer || !layer.getBounds().contains(latlng)) return false;
+
+            const latlngs = layer.getLatLngs();
+            // Handle MultiPolygon and Holes (Flatten to array of rings)
+            const rings = layer instanceof L.MultiPolygon || Array.isArray(latlngs[0]) ?
+                (Array.isArray(latlngs[0]) && !Array.isArray(latlngs[0][0]) ? [latlngs] : latlngs) :
+                [latlngs];
+
+            let inside = false;
+            const x = latlng.lat, y = latlng.lng;
+
+            for (let i = 0; i < rings.length; i++) {
+                let ring = rings[i];
+                if (Array.isArray(ring[0]) || ring[0] instanceof L.LatLng) {
+                    // Normalize ring (Latlng list)
+                    const coords = (ring[0] instanceof L.LatLng) ? ring : ring[0];
+                    for (let j = 0, k = coords.length - 1; j < coords.length; k = j++) {
+                        const xi = coords[j].lat, yi = coords[j].lng;
+                        const xj = coords[k].lat, yj = coords[k].lng;
+                        const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+                        if (intersect) inside = !inside;
+                    }
+                }
+            }
+            return inside;
+        }
+
         let windEngine = null;
         class WindEngine {
             constructor(map) {
@@ -367,6 +590,7 @@
                 this.ctx = this.canvas.getContext('2d');
                 this.particles = [];
                 this.data = [];
+                this.govLayers = {}; // To be populated by initMap
 
                 window.addEventListener('resize', () => this.resize());
                 map.on('move moveend zoomend', () => this.resize());
@@ -389,21 +613,24 @@
                 this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
                 this.ctx.globalCompositeOperation = 'source-over';
 
-                // Spawn (INCREASED DENSITY)
-                if (this.particles.length < 400 && this.data.length > 0) {
-                    for (let i = 0; i < 3; i++) {
+                // Spawn (STICKY TO GOVERNORATES)
+                if (this.particles.length < 500 && this.data.length > 0) {
+                    for (let i = 0; i < 4; i++) {
                         const city = this.data[Math.floor(Math.random() * this.data.length)];
+                        const layer = this.govLayers[city.city_name];
+                        if (!layer) continue;
+
                         const pt = this.map.latLngToContainerPoint([city.latitude, city.longitude]);
                         this.particles.push({
-                            x: pt.x + (Math.random() - 0.5) * 80,
-                            y: pt.y + (Math.random() - 0.5) * 80,
-                            v: city.windspeed * 0.2 + 0.8,
+                            x: pt.x + (Math.random() - 0.5) * 50,
+                            y: pt.y + (Math.random() - 0.5) * 50,
+                            v: city.windspeed * 0.15 + 0.5,
                             a: (city.winddirection - 90) * Math.PI / 180,
-                            life: 1.2
+                            life: 1.0 + Math.random() * 0.5,
+                            layer: layer
                         });
                     }
                 }
-
                 this.ctx.lineWidth = 2;
                 this.ctx.shadowBlur = 4;
                 this.ctx.shadowColor = '#0ff';
@@ -411,13 +638,23 @@
                 this.particles.forEach((p, i) => {
                     const dx = Math.cos(p.a) * p.v;
                     const dy = Math.sin(p.a) * p.v;
+
+                    // Check Boundary Constraint
+                    const nextX = p.x + dx;
+                    const nextY = p.y + dy;
+                    const latlng = this.map.containerPointToLatLng([nextX, nextY]);
+
+                    if (!isPointInPolygon(latlng, p.layer)) {
+                        p.life = 0; // Destroy if boundary hit
+                    }
+
                     this.ctx.beginPath();
-                    this.ctx.strokeStyle = `rgba(0, 255, 255, ${p.life * 1.0})`;
+                    this.ctx.strokeStyle = `rgba(0, 255, 255, ${p.life * 0.8})`;
                     this.ctx.moveTo(p.x, p.y);
-                    p.x += dx; p.y += dy;
+                    p.x = nextX; p.y = nextY;
                     this.ctx.lineTo(p.x, p.y);
                     this.ctx.stroke();
-                    p.life -= 0.008;
+                    p.life -= 0.012;
                     if (p.life <= 0) this.particles.splice(i, 1);
                 });
                 this.ctx.shadowBlur = 0; // Reset for performance
@@ -509,10 +746,22 @@
                                 if (city) selectCity(city);
                             }
                         });
+
+                        // Store for wind engine
+                        if (windEngine) windEngine.govLayers[mappedName] = layer;
+                        if (windEngine && normGov === "mukalla") windEngine.govLayers["Mukalla"] = layer;
+                        if (windEngine && mappedName === "Sana'a") windEngine.govLayers["Sana'a"] = layer;
                     }
                 }).addTo(map);
 
-                if (!windEngine) windEngine = new WindEngine(map);
+                if (!windEngine) {
+                    windEngine = new WindEngine(map);
+                    // Repopulate if created after layer load
+                    geoLayer.eachLayer(l => {
+                        const name = NAME_MAP[l.feature.properties.shapeName] || l.feature.properties.shapeName;
+                        windEngine.govLayers[name] = l;
+                    });
+                }
             } catch (e) {
                 console.error("MAP_GEO_ERR", e);
                 // Fallback: If GeoJSON fails, the map will still show tiles and markers.
@@ -630,7 +879,45 @@
             };
             draw('radarChart', 'radar', radarData, { scales: { r: { grid: { color: '#222' }, angleLines: { color: '#222' }, ticks: { display: false } } } });
 
-            // 2. Bar
+            // 2. UV Polar Chart
+            const polarData = {
+                labels: current.slice(0, 6).map(x => x.city_name),
+                datasets: [{
+                    label: 'UV Index',
+                    // Add a baseline of 0.5 so segments are visible even when UV is 0 (Night Mode)
+                    data: current.slice(0, 6).map(x => Math.max(x.uv_index || 0, 0.5)),
+                    backgroundColor: [
+                        'rgba(255, 0, 255, 0.4)',
+                        'rgba(255, 165, 0, 0.4)',
+                        'rgba(0, 255, 255, 0.4)',
+                        'rgba(255, 255, 0, 0.4)',
+                        'rgba(0, 255, 0, 0.4)',
+                        'rgba(0, 0, 255, 0.4)'
+                    ],
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                    borderWidth: 1
+                }]
+            };
+            draw('polarChart', 'polarArea', polarData, {
+                scales: {
+                    r: {
+                        grid: { color: '#1a1a1a' },
+                        angleLines: { color: '#1a1a1a' },
+                        suggestedMax: 10,
+                        ticks: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `UV_INDEX: ${current[context.dataIndex].uv_index}`
+                        }
+                    }
+                }
+            });
+
+            // 3. Bar
             const barLabels = current.slice(0, 8).map(x => x.city_name);
             const barData = {
                 labels: barLabels,
@@ -638,7 +925,7 @@
             };
             draw('barChart', 'bar', barData, { indexAxis: 'y', scales: { x: { grid: { color: '#111' } }, y: { grid: { display: false } } } });
 
-            // 3. Line
+            // 4. Line
             const historyNames = [...new Set(history.map(h => h.city_name))];
             const displayCities = historyNames.length > 0 ? historyNames.slice(0, 4) : current.slice(0, 4).map(c => c.city_name);
 
