@@ -556,7 +556,18 @@
 
                 renderSidebar(data.current);
                 renderStats(data.current);
-                renderVisuals(data.current, data.history);
+
+                // Ensure history is at least partially populated for the visual even if empty on server
+                let historyData = data.history || [];
+                if (historyData.length === 0 && data.current.length > 0) {
+                    historyData = data.current.map(c => ({
+                        city_name: c.city_name,
+                        temperature: c.temperature,
+                        observation_time: new Date().toISOString()
+                    }));
+                }
+
+                renderVisuals(data.current, historyData);
                 updateMarkers(data.current);
 
             } catch (e) {
@@ -628,16 +639,41 @@
             draw('barChart', 'bar', barData, { indexAxis: 'y', scales: { x: { grid: { color: '#111' } }, y: { grid: { display: false } } } });
 
             // 3. Line
-            const cities = [...new Set(history.map(h => h.city_name))].slice(0, 4);
+            const historyNames = [...new Set(history.map(h => h.city_name))];
+            const displayCities = historyNames.length > 0 ? historyNames.slice(0, 4) : current.slice(0, 4).map(c => c.city_name);
+
             const lineData = {
-                datasets: cities.map((name, i) => ({
-                    label: name,
-                    data: history.filter(h => h.city_name === name).map(h => ({ x: h.observation_time, y: h.temperature })),
-                    borderColor: ['#0ff', '#f0f', '#0f0', '#ff0'][i],
-                    borderWidth: 2, pointRadius: 0, tension: 0.3
-                }))
+                datasets: displayCities.map((name, i) => {
+                    const cityHistory = history.filter(h => h.city_name === name);
+                    return {
+                        label: name,
+                        data: cityHistory.map(h => ({ x: h.observation_time, y: h.temperature })),
+                        borderColor: ['#0ff', '#f0f', '#0f0', '#ff0'][i],
+                        borderWidth: 2,
+                        pointRadius: 2,
+                        tension: 0.3,
+                        showLine: cityHistory.length > 1
+                    };
+                })
             };
-            draw('lineChart', 'line', lineData, { scales: { x: { type: 'time', grid: { color: '#111' } }, y: { grid: { color: '#111' } } } });
+
+            draw('lineChart', 'line', lineData, {
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: { unit: 'hour', displayFormats: { hour: 'HH:mm' } },
+                        grid: { color: '#111' },
+                        ticks: { color: '#444', font: { size: 9 } }
+                    },
+                    y: {
+                        grid: { color: '#111' },
+                        ticks: { color: '#444', font: { size: 9 } }
+                    }
+                },
+                plugins: {
+                    legend: { display: true, labels: { boxWidth: 10, font: { size: 10 } } }
+                }
+            });
         }
 
         function draw(id, type, data, options) {

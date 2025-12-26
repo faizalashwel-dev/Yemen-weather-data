@@ -40,8 +40,8 @@ def get_weather():
         cursor.execute(query_current)
         cities = [dict(row) for row in cursor.fetchall()]
 
-        # History Fetch (Last 3 hours)
-        limit = (datetime.now() - timedelta(hours=3)).strftime('%Y-%m-%d %H:%M:%S')
+        # History Fetch (Last 6 hours)
+        limit = (datetime.now() - timedelta(hours=6)).strftime('%Y-%m-%d %H:%M:%S')
         query_history = """
             SELECT l.city_name, wh.temperature, wh.observation_time 
             FROM weather_history wh 
