@@ -8,12 +8,33 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
+            /* PREMIUM LIGHT THEME (DEFAULT) */
+            --bg: #f8fafc;
+            --panel: #ffffff;
+            --header-bg: #ffffff;
+            --accent: #d6004a;
+            --accent-dim: rgba(214, 0, 74, 0.1);
+            --border: #e2e8f0;
+            --text-main: #1e293b;
+            --text-dim: #64748b;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --alert: #f59e0b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        [data-theme="dark"] {
+            /* TACTICAL DARK THEME */
             --bg: #020202;
             --panel: #0a0a0a;
+            --header-bg: #000000;
             --accent: #ff0055;
             --accent-dim: rgba(255, 0, 85, 0.2);
             --border: #1a1a1a;
+            --text-main: #ffffff;
             --text-dim: #888;
+            --card-shadow: none;
             --alert: #ffcc00;
             --success: #00ff66;
             --warning: #ffaa00;
@@ -25,7 +46,7 @@
             padding: 0;
             box-sizing: border-box;
             font-family: 'Consolas', monospace;
-            color: #fff;
+            color: var(--text-main);
         }
 
         body {
@@ -35,6 +56,7 @@
             flex-direction: column;
             overflow-x: hidden;
             font-size: 14px;
+            transition: background 0.3s, color 0.3s;
         }
 
         /* SCROLLBAR */
@@ -43,11 +65,11 @@
         }
 
         ::-webkit-scrollbar-track {
-            background: #000;
+            background: var(--bg);
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #333;
+            background: var(--border);
             border-radius: 4px;
         }
 
@@ -62,7 +84,7 @@
             display: flex;
             align-items: center;
             padding: 0 20px;
-            background: #000;
+            background: var(--header-bg);
             justify-content: space-between;
             z-index: 100;
         }
@@ -102,6 +124,8 @@
             flex-direction: column;
             position: relative;
             overflow: hidden;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
         }
 
         .card::before {
@@ -129,9 +153,8 @@
         .metric-value {
             font-size: 2.2rem;
             font-weight: bold;
-            color: #fff;
+            color: var(--text-main);
             margin-bottom: 5px;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
         }
 
         .metric-large {
@@ -214,12 +237,13 @@
         .feed-container {
             grid-column: span 2;
             height: 300px;
-            background: #000;
-            border: 1px solid #222;
+            background: var(--bg);
+            border: 1px solid var(--border);
             padding: 10px;
             overflow-y: hidden;
             position: relative;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Consolas', monospace;
+            border-radius: 8px;
         }
 
         .feed-header {
@@ -432,7 +456,11 @@
             <button class="menu-btn" id="drawer-toggle">☰</button>
             <div class="logo">HEALTH_SYNDROME // <span style="color:var(--accent)">BIO_SURVEILLANCE_GRID</span></div>
         </div>
-        <div class="status-badge" id="system-status">ESTABLISHING UPLINK...</div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="status-badge" id="system-status">ESTABLISHING UPLINK...</div>
+            <button onclick="toggleTheme()"
+                style="background:var(--accent); color:#fff; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:0.65rem; font-weight:bold;">THEME</button>
+        </div>
     </header>
 
     <div class="drawer-overlay" id="drawer-overlay"></div>
@@ -477,9 +505,9 @@
             </div>
 
             <!-- 4. FUNDING GAP -->
-            <div class="card" style="border-color: #ff5555;">
-                <div class="card-title" style="color:#ff5555">FUNDING GAP (HEALTH)</div>
-                <div class="metric-value" id="val-fund" style="color:#ff5555">--</div>
+            <div class="card" style="border-color: var(--danger);">
+                <div class="card-title" style="color:var(--danger)">FUNDING GAP (HEALTH)</div>
+                <div class="metric-value" id="val-fund" style="color:var(--danger)">--</div>
                 <div class="metric-sub">REQ. FOR SUSTAINED RESPONSE</div>
             </div>
         </div>
@@ -592,8 +620,8 @@
                     startFeed(ex.reports);
 
                     document.getElementById('system-status').innerText = "OFFICIAL DATA SYNCED";
-                    document.getElementById('system-status').style.color = "#00ff00";
-                    document.getElementById('system-status').style.borderColor = "#00ff00";
+                    document.getElementById('system-status').style.color = "var(--success)";
+                    document.getElementById('system-status').style.borderColor = "var(--success)";
                 }
             } catch (e) {
                 console.error(e);
@@ -615,19 +643,26 @@
                 data: {
                     labels: labels,
                     datasets: [
-                        { label: 'Operational', data: active, backgroundColor: '#00ff66' },
-                        { label: 'Partial', data: partial, backgroundColor: '#ffcc00' },
-                        { label: 'Non-Func', data: closed, backgroundColor: '#ff3333' }
+                        { label: 'Operational', data: active, backgroundColor: 'var(--success)' },
+                        { label: 'Partial', data: partial, backgroundColor: 'var(--warning)' },
+                        { label: 'Non-Func', data: closed, backgroundColor: 'var(--danger)' }
                     ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        x: { stacked: true, grid: { color: '#222' } },
-                        y: { stacked: true, grid: { color: '#222' } }
+                        x: { stacked: true, grid: { color: 'var(--border)' }, ticks: { color: 'var(--text-light)' } },
+                        y: { stacked: true, grid: { color: 'var(--border)' }, ticks: { color: 'var(--text-light)' } }
                     },
-                    plugins: { legend: { position: 'top' } }
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: 'var(--text-color)'
+                            }
+                        }
+                    }
                 }
             });
         }
@@ -645,31 +680,31 @@
                 <div style="display:flex; flex-direction:column; gap:15px; margin-top:10px;">
                     <div>
                         <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                            <span style="font-size:0.8rem; color:#aaa;">PEOPLE IN NEED</span>
+                            <span style="font-size:0.8rem; color:var(--text-light);">PEOPLE IN NEED</span>
                             <span style="font-weight:bold;">${(pNeed / 1000000).toFixed(1)}M</span>
                         </div>
-                        <div style="width:100%; height:6px; background:#333; border-radius:3px;">
-                            <div style="width:100%; height:100%; background:#ff5555; border-radius:3px;"></div>
+                        <div style="width:100%; height:6px; background:var(--bg-dark); border-radius:3px;">
+                            <div style="width:100%; height:100%; background:var(--danger); border-radius:3px;"></div>
                         </div>
                     </div>
                     
                     <div>
                         <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                            <span style="font-size:0.8rem; color:#aaa;">TARGETED FOR AID</span>
+                            <span style="font-size:0.8rem; color:var(--text-light);">TARGETED FOR AID</span>
                             <span style="font-weight:bold;">${(pTarget / 1000000).toFixed(1)}M</span>
                         </div>
-                        <div style="width:100%; height:6px; background:#333; border-radius:3px;">
-                            <div style="width:${pctTarget}%; height:100%; background:#faa; border-radius:3px;"></div>
+                        <div style="width:100%; height:6px; background:var(--bg-dark); border-radius:3px;">
+                            <div style="width:${pctTarget}%; height:100%; background:var(--warning); border-radius:3px;"></div>
                         </div>
                     </div>
 
                     <div>
                         <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                            <span style="font-size:0.8rem; color:#aaa;">REACHED (Q1)</span>
-                            <span style="font-weight:bold; color:#00ff66;">${(pReach / 1000000).toFixed(1)}M</span>
+                            <span style="font-size:0.8rem; color:var(--text-light);">REACHED (Q1)</span>
+                            <span style="font-weight:bold; color:var(--success);">${(pReach / 1000000).toFixed(1)}M</span>
                         </div>
-                        <div style="width:100%; height:6px; background:#333; border-radius:3px;">
-                            <div style="width:${(pReach / pNeed) * 100}%; height:100%; background:#00ff66; border-radius:3px;"></div>
+                        <div style="width:100%; height:6px; background:var(--bg-dark); border-radius:3px;">
+                            <div style="width:${(pReach / pNeed) * 100}%; height:100%; background:var(--success); border-radius:3px;"></div>
                         </div>
                     </div>
                 </div>
@@ -682,9 +717,9 @@
             data.forEach(item => {
                 tbody.innerHTML += `
                     <tr>
-                        <td style="color:#aaa; white-space:nowrap;">${item.date}</td>
+                        <td style="color:var(--text-light); white-space:nowrap;">${item.date}</td>
                         <td style="color:var(--accent);">${item.source}</td>
-                        <td style="color:#fff;">${item.title.substring(0, 40)}${item.title.length > 40 ? '...' : ''}</td>
+                        <td style="color:var(--text-color);">${item.title.substring(0, 40)}${item.title.length > 40 ? '...' : ''}</td>
                     </tr>
                 `;
             });
@@ -702,7 +737,7 @@
                     datasets: [{
                         label: label,
                         data: vals,
-                        borderColor: '#00ccff',
+                        borderColor: 'var(--accent)',
                         borderWidth: 2,
                         tension: 0.4,
                         pointRadius: 0
@@ -711,7 +746,14 @@
                 options: {
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
-                    scales: { x: { display: false }, y: { display: true, grid: { color: '#222' } } }
+                    scales: {
+                        x: { display: false },
+                        y: {
+                            display: true,
+                            grid: { color: 'var(--border)' },
+                            ticks: { color: 'var(--text-light)' }
+                        }
+                    }
                 }
             });
         }
@@ -748,7 +790,29 @@
             if (f.children.length > 6) f.removeChild(f.lastChild);
         }
 
-        fetchHealthData();
+        // THEME TOGGLE
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme') || 'dark'; // Default to dark if not set
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+
+            // Re-render
+            location.reload(); // Simplest way to re-init charts with new theme colors
+        }
+
+        // Init theme
+        (function () {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+
+        // Call fetchHealthData on page load
+        function init() {
+            fetchHealthData();
+        }
+        window.onload = init;
     </script>
 </body>
 
