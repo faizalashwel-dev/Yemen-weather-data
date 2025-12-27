@@ -4,10 +4,7 @@ import os
 DB_FILE = 'weather.db'
 
 def init_db():
-    if os.path.exists(DB_FILE):
-        print("Database already exists.")
-        return
-
+    # Always run script to ensure tables exist (even if DB file existed)
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     
