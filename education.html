@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EDUCATION_OPS // NRT_GRID</title>
+    <!-- Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <!-- Leaflet CSS/JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #030408;
+            --panel: rgba(13, 17, 23, 0.7);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --accent: #00ffa3;
+            --danger: #ff3366;
+            --warning: #ffb800;
+            --info: #00d1ff;
+            --text-main: #f8fafc;
+            --text-mud: #94a3b8;
+            --glass-bg: rgba(13, 17, 23, 0.6);
+            --glow-accent: rgba(0, 255, 163, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(0, 209, 255, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 255, 163, 0.05) 0%, transparent 40%);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        header {
+            height: 60px;
+            border-bottom: 1px solid var(--panel-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            background: rgba(3, 4, 8, 0.8);
+            backdrop-filter: blur(12px);
+            z-index: 100;
+        }
+
+        .logo {
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            font-size: 1rem;
+            background: linear-gradient(90deg, #fff, var(--text-mud));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Drawer */
+        .drawer {
+            position: fixed;
+            top: 0;
+            left: -320px;
+            width: 320px;
+            height: 100%;
+            background: #0a0c12;
+            border-right: 1px solid var(--panel-border);
+            z-index: 2000;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 40px 30px;
+        }
+
+        .drawer.active {
+            transform: translateX(320px);
+        }
+
+        .drawer a {
+            display: block;
+            padding: 18px 20px;
+            color: var(--text-mud);
+            text-decoration: none;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .drawer a:hover,
+        .drawer a.active {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(5px);
+        }
+
+        .drawer a.active {
+            background: var(--glow-accent);
+            color: var(--accent);
+            box-shadow: inset 0 0 20px rgba(0, 255, 163, 0.1);
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1500;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Layout */
+        .container {
+            flex: 1;
+            min-height: 0;
+            padding: 20px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-auto-rows: minmax(130px, auto);
+            /* Reduced from 180px */
+            gap: 15px;
+            scroll-behavior: smooth;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .hud-container {
+            grid-column: span 4;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 5px;
+        }
+
+        /* Card System */
+        .card {
+            background: var(--panel);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 15px;
+            /* Reduced from 20px */
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: fadeIn 0.6s ease-out backwards;
+            min-height: 0;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .hud-card {
+            min-height: 100px;
+            padding: 12px 15px;
+            justify-content: center;
+        }
+
+        .card-header {
+            font-size: 0.65rem;
+            color: var(--text-mud);
+            font-weight: 600;
+            letter-spacing: 0.8px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+
+        .metric-big {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.5px;
+            line-height: 1;
+            margin-bottom: 5px;
+        }
+
+        .metric-small {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-mud);
+        }
+
+        .chart-container {
+            flex: 1;
+            position: relative;
+            min-height: 0;
+        }
+
+        /* Utilities */
+        .col-2 {
+            grid-column: span 2;
+        }
+
+        .col-4 {
+            grid-column: span 4;
+        }
+
+        .row-2 {
+            grid-row: span 2;
+        }
+
+        /* Widgets */
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .status-tile {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 12px 5px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .tile-val {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .tile-label {
+            font-size: 0.6rem;
+            color: var(--text-mud);
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            background: rgba(255, 255, 255, 0.05);
+            height: 8px;
+            width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, var(--info), #0082ff);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .progress-marker {
+            display: none;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+            border-radius: 16px;
+            background: #080a0f;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Signal Indicator */
+        .live-signal {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent);
+            animation: blink 1.2s infinite ease-in-out;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 10px;
+            position: relative;
+            top: -1px;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 0.2;
+                transform: scale(0.8);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.1);
+            }
+        }
+
+        .chart-signal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 12px var(--accent);
+            animation: pulse-fast 0.6s infinite alternate;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        @keyframes pulse-fast {
+            from {
+                opacity: 0.2;
+                transform: scale(0.8);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1.2);
+            }
+        }
+
+        .chart-signal.info {
+            background: var(--info);
+            box-shadow: 0 0 12px var(--info);
+        }
+
+        .chart-signal.danger {
+            background: var(--danger);
+            box-shadow: 0 0 12px var(--danger);
+        }
+
+        .chart-signal.warning {
+            background: var(--warning);
+            box-shadow: 0 0 12px var(--warning);
+        }
+
+        .live-signal.warning {
+            background: var(--warning);
+            box-shadow: 0 0 10px var(--warning);
+        }
+
+        .live-signal.danger {
+            background: var(--danger);
+            box-shadow: 0 0 10px var(--danger);
+        }
+
+        .live-signal.info {
+            background: var(--info);
+            box-shadow: 0 0 10px var(--info);
+        }
+
+        /* Loader */
+        #loader {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 5000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="loader">
+        <div class="spinner"></div>
+        <div style="margin-top:20px; font-size: 0.8rem; opacity: 0.8;">ESTABLISHING NEAR-REAL-TIME UPLINK...</div>
+    </div>
+
+    <header>
+        <div style="display:flex; align-items:center; gap:15px;">
+            <div style="cursor:pointer; font-size:1.2rem;" onclick="toggleDrawer()">☰</div>
+            <div class="logo">EDUCATION_SECTOR // NEAR-REAL-TIME OPS</div>
+        </div>
+        <div id="status-line" style="font-size:0.7rem; color:var(--text-mud);">SYNCING...</div>
+    </header>
+
+    <div class="overlay" id="ol"></div>
+    <div class="drawer" id="dr">
+        <div style="margin-bottom:30px; color:var(--accent);">Directory</div>
+        <a href="/">METEO_COMMAND</a>
+        <a href="/health">HEALTH_SECTOR</a>
+        <a href="/education" class="active">EDUCATION_OPS</a>
+    </div>
+
+    <div class="container">
+        <!-- TOP ROW: HIGH-LEVEL KPI HUD -->
+        <div class="hud-container">
+            <div class="card hud-card" style="border-top: 3px solid var(--accent); position: relative;">
+                <div class="chart-signal" style="top:10px; right:12px; width:5px; height:5px;"></div>
+                <div class="card-header">OPERATIONAL SCHOOLS</div>
+                <div class="metric-big" id="k-active">--</div>
+                <div class="metric-small">LIVE STATUS</div>
+            </div>
+            <div class="card hud-card" style="border-top: 3px solid var(--info); position: relative;">
+                <div class="chart-signal info" style="top:10px; right:12px; width:5px; height:5px;"></div>
+                <div class="card-header">AVG ATTENDANCE (30D)</div>
+                <div class="metric-big" id="k-att">--%</div>
+                <div class="metric-small">30-DAY TREND</div>
+            </div>
+            <div class="card hud-card" style="border-top: 3px solid var(--warning); position: relative;">
+                <div class="chart-signal warning" style="top:10px; right:12px; width:5px; height:5px;"></div>
+                <div class="card-header">STAFFING CAPACITY</div>
+                <div class="metric-big" id="k-staff">--%</div>
+                <div class="metric-small"><span id="k-staff-sub">--</span> ONLINE</div>
+            </div>
+            <div class="card hud-card" style="border-top: 3px solid var(--danger); position: relative;">
+                <div class="chart-signal danger" style="top:10px; right:12px; width:5px; height:5px;"></div>
+                <div class="card-header">SYSTEM RISK INDEX</div>
+                <div class="metric-big" id="k-risk" style="color:var(--danger)">--</div>
+                <div class="metric-small">EARLY WARNING SCORE</div>
+            </div>
+        </div>
+
+        <!-- ROW 2 & 3: STRATEGIC & SPATIAL -->
+        <div class="card col-2 row-2" style="position: relative;">
+            <div class="chart-signal" style="top:15px; right:15px;"></div>
+            <div class="card-header">SCHOOL STATUS LIVE MAP</div>
+            <div id="map"></div>
+        </div>
+
+        <!-- Closure Drivers (Row 2 Right) -->
+        <div class="card col-2">
+            <div class="card-header">CLOSURE DRIVERS</div>
+            <div class="chart-container">
+                <div class="chart-signal danger"></div>
+                <canvas id="c5"></canvas>
+            </div>
+        </div>
+
+        <!-- ROW 3 Right Half: Two Numerical Charts -->
+        <div class="card">
+            <div class="card-header">TEACHING CAPACITY</div>
+            <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; position: relative;">
+                <div class="chart-signal info" style="top:0; right:0;"></div>
+                <div
+                    style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:8px; font-weight: 600;">
+                    <span style="color:var(--info);" id="val-teach-pres">--</span>
+                    <span style="color:var(--text-mud);" id="val-teach-exp">--</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="bar-teach" style="width:0%;"></div>
+                </div>
+                <div
+                    style="font-size:9px; color:var(--text-mud); margin-top:10px; font-weight: 600; text-align: center;">
+                    VAR: 50% SYSTEM GAP</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">PAYROLL STATUS</div>
+            <div class="status-grid"
+                style="display: flex; flex-direction: column; gap: 8px; flex: 1; justify-content: center; position: relative;">
+                <div class="chart-signal warning" style="top:0; right:0;"></div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.65rem; color: var(--text-mud); font-weight: 600;">PAID</span>
+                    <span style="font-size: 0.9rem; font-weight: 700; color: var(--accent);" id="sal-paid">--%</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.65rem; color: var(--text-mud); font-weight: 600;">DELAYED</span>
+                    <span style="font-size: 0.9rem; font-weight: 700; color: var(--warning);" id="sal-del">--%</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.65rem; color: var(--text-mud); font-weight: 600;">UNPAID</span>
+                    <span style="font-size: 0.9rem; font-weight: 700; color: var(--danger);" id="sal-unp">--%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ROW 4: Dropout Risk (Wide) -->
+        <div class="card col-4" style="min-height: 120px;">
+            <div class="card-header">SYSTEMIC DROPOUT RISK INDEX</div>
+            <div
+                style="flex:1; display:flex; align-items:center; justify-content:space-around; gap: 20px; position: relative;">
+                <div class="chart-signal danger" style="top:0; right:0;"></div>
+                <div style="text-align: center;">
+                    <div style="font-size:3.5rem; font-weight:800; color:var(--danger); line-height: 1;" id="val-risk">
+                        --</div>
+                    <div style="font-size:0.7rem; font-weight: 600; letter-spacing:2px; color:var(--text-mud); margin-top: 5px;"
+                        id="lbl-risk">CRITICAL</div>
+                </div>
+                <div style="width: 1px; height: 60px; background: var(--panel-border);"></div>
+                <div style="max-width: 500px; font-size: 0.85rem; color: var(--text-mud); line-height: 1.5;">
+                    <b style="color: var(--danger);">ALERT:</b> System-wide dropout risk has exceeded the 2025 stability
+                    threshold. Primary drivers include fuel scarcity and regional displacement in central zones.
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <div
+                        style="padding: 15px; border-radius: 12px; border: 1px solid var(--panel-border); background: rgba(255,51,102,0.05); text-align: center;">
+                        <div style="font-size: 1.2rem; font-weight: 700; color: var(--danger);">+12%</div>
+                        <div style="font-size: 0.6rem; color: var(--text-mud);">MoM DELTA</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ROW 5: LINE CHARTS -->
+        <div class="card">
+            <div class="card-header">ACTIVE SCHOOLS TREND</div>
+            <div class="chart-container">
+                <div class="chart-signal"></div>
+                <canvas id="c1"></canvas>
+            </div>
+        </div>
+
+        <div class="card col-2">
+            <div class="card-header">ATTENDANCE VS ABSENCE</div>
+            <div class="chart-container">
+                <div class="chart-signal info"></div>
+                <canvas id="c3"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">SCHOOLS CLOSED (ROLLING)</div>
+            <div class="chart-container">
+                <div class="chart-signal danger"></div>
+                <canvas id="c4"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Drawer Logic
+        const drawer = document.getElementById('dr');
+        const overlay = document.getElementById('ol');
+        function toggleDrawer() { drawer.classList.toggle('active'); overlay.classList.toggle('active'); }
+        overlay.onclick = toggleDrawer;
+
+        // Init Map
+        const map = L.map('map', { attributionControl: false }).setView([15.3694, 44.1910], 6);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19
+        }).addTo(map);
+
+        // Global Chart Registry
+        const chartRegistry = {};
+
+        // Fetch Data
+        async function init() {
+            try {
+                const res = await fetch('/api/education');
+                const json = await res.json();
+                if (json.status === 'success') {
+                    renderCharts(json.nrt);
+                    document.getElementById('loader').style.display = 'none';
+                    document.getElementById('status-line').innerText = "LIVE STREAM: " + json.meta.timestamp;
+                    document.getElementById('status-line').style.color = "var(--accent)";
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function createChart(id, config) {
+            if (chartRegistry[id]) chartRegistry[id].destroy();
+            chartRegistry[id] = new Chart(document.getElementById(id), config);
+        }
+
+        function renderCharts(d) {
+            // Chart Defaults
+            Chart.defaults.color = 'rgba(255,255,255,0.4)';
+            Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
+            Chart.defaults.font.family = "'Inter', sans-serif";
+
+            // --- 0. POPULATE HUD CARDS ---
+            document.getElementById('k-active').innerText = d.active_schools.current.toLocaleString();
+
+            const avgAtt = d.attendance_rate.values.reduce((a, b) => a + b, 0) / d.attendance_rate.values.length;
+            document.getElementById('k-att').innerText = avgAtt.toFixed(1) + "%";
+
+            const staffPct = (d.teachers_stat.present / d.teachers_stat.expected) * 100;
+            document.getElementById('k-staff').innerText = staffPct.toFixed(1) + "%";
+            document.getElementById('k-staff-sub').innerText = (d.teachers_stat.present / 1000).toFixed(1) + "K";
+
+            document.getElementById('k-risk').innerText = d.dropout_risk.value;
+
+
+            // 1. Active Schools (Sparkline)
+            createChart('c1', {
+                type: 'line',
+                data: { labels: [1, 2, 3, 4, 5, 6, 7], datasets: [{ data: d.active_schools.history_7d, borderColor: '#00ffa3', borderWidth: 2, tension: 0.4, pointRadius: 0 }] },
+                options: { plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } }, maintainAspectRatio: false }
+            });
+
+            // 2. Attendance vs Absence (c3)
+            createChart('c3', {
+                type: 'line',
+                data: {
+                    labels: d.attendance_vs_absence.dates,
+                    datasets: [
+                        { label: 'Present', data: d.attendance_vs_absence.present, borderColor: 'transparent', backgroundColor: 'rgba(0, 250, 150, 0.4)', fill: true, borderWidth: 0, tension: 0.4 },
+                        { label: 'Absent', data: d.attendance_vs_absence.absent, borderColor: 'transparent', backgroundColor: 'rgba(255, 50, 100, 0.4)', fill: true, borderWidth: 0, tension: 0.4 }
+                    ]
+                },
+                options: { plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { stacked: true, max: 100, display: false } }, elements: { point: { radius: 0 } }, maintainAspectRatio: false }
+            });
+
+            // 3. Closed Schools (c4)
+            createChart('c4', {
+                type: 'line',
+                data: { labels: d.schools_closed.dates, datasets: [{ label: 'Closed', data: d.schools_closed.count, borderColor: '#ff3366', backgroundColor: 'rgba(255, 51, 102, 0.1)', fill: true, borderWidth: 2, tension: 0.4, pointRadius: 0 }] },
+                options: { plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { color: 'rgba(255,255,255,0.05)' } } }, maintainAspectRatio: false }
+            });
+
+            // 4. Closure Drivers (c5)
+            createChart('c5', {
+                type: 'bar',
+                data: { labels: d.closure_reasons.labels, datasets: [{ data: d.closure_reasons.values, backgroundColor: ['#ff3366', '#ffb800', '#00ffa3', '#00d1ff', '#94a3b8'], borderRadius: 6, barThickness: 8 }] },
+                options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { display: false } } }, maintainAspectRatio: false }
+            });
+
+            // 5. Teachers Stat (DOM)
+            document.getElementById('val-teach-pres').innerText = (d.teachers_stat.present / 1000).toFixed(1) + "K";
+            document.getElementById('val-teach-exp').innerText = (d.teachers_stat.expected / 1000).toFixed(1) + "K";
+            document.getElementById('bar-teach').style.width = ((d.teachers_stat.present / d.teachers_stat.expected) * 100) + "%";
+
+            // 6. Salary Status (DOM)
+            document.getElementById('sal-paid').innerText = d.salary_status.paid + "%";
+            document.getElementById('sal-del').innerText = d.salary_status.delayed + "%";
+            document.getElementById('sal-unp').innerText = d.salary_status.unpaid + "%";
+
+            // 7. Dropout Risk (DOM)
+            document.getElementById('val-risk').innerText = d.dropout_risk.value;
+            document.getElementById('val-risk').style.color = d.dropout_risk.value > 70 ? '#ff3366' : '#ffb800';
+            document.getElementById('lbl-risk').innerText = d.dropout_risk.level;
+
+            // 8. Map Markers
+            // Clear markers if needed or just add new ones (Leaflet layer group would be better but this is simple)
+            d.school_map.forEach(p => {
+                const color = p.status === 'Open' ? '#00ffa3' : (p.status === 'Closed' ? '#ff3366' : '#ffb800');
+                L.circleMarker([p.lat, p.lon], { radius: 6, weight: 2, color: color, fillColor: color, fillOpacity: 0.4 }).addTo(map)
+                    .bindPopup(`<b>${p.name}</b><br>Status: ${p.status}`);
+            });
+        }
+
+        // Run on load and repeat
+        window.onload = () => {
+            init();
+            setInterval(init, 10000);
+        };
+    </script>
+</body>
+
+</html>

@@ -312,15 +312,146 @@
             text-transform: uppercase;
             font-size: 0.75rem;
         }
+
+        /* SIDE DRAWER STYLES */
+        .menu-btn {
+            background: none;
+            border: none;
+            color: var(--accent);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+            margin-right: 15px;
+        }
+
+        .menu-btn:hover {
+            text-shadow: 0 0 10px var(--accent);
+        }
+
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .drawer-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .drawer {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 300px;
+            height: 100%;
+            background: #050505;
+            border-right: 2px solid var(--accent);
+            z-index: 2001;
+            transition: left 0.3s ease-in-out;
+            padding: 20px;
+            box-shadow: 10px 0 30px rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .drawer.active {
+            left: 0;
+        }
+
+        .drawer-header {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .drawer-title {
+            color: var(--accent);
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+        }
+
+        .close-drawer {
+            background: none;
+            border: none;
+            color: #555;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .close-drawer:hover {
+            color: var(--accent);
+        }
+
+        .drawer-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: #aaa;
+            font-size: 1rem;
+            padding: 10px;
+            border-left: 2px solid transparent;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: #fff;
+            background: #111;
+            border-left-color: var(--accent);
+        }
+
+        .nav-link b {
+            color: var(--accent);
+            font-size: 0.8rem;
+        }
     </style>
 </head>
 
 <body>
     <div id="api-error" class="error-banner">OFFLINE: NO CONNECTION TO BACKEND SERVER</div>
     <header>
-        <div class="logo">ATMOS-ALPHA // TACTICAL_ISR_GRID v11.0 // DEEP_SCAN</div>
+        <div style="display: flex; align-items: center;">
+            <button class="menu-btn" id="drawer-toggle">☰</button>
+            <div class="logo">ATMOS-ALPHA // TACTICAL_ISR_GRID v11.0</div>
+        </div>
         <div id="sync-tag" class="sync-tag">CONNECTING_LINK...</div>
     </header>
+
+    <div class="drawer-overlay" id="drawer-overlay"></div>
+    <div class="drawer" id="drawer">
+        <div class="drawer-header">
+            <div class="drawer-title">COMMAND_MENU</div>
+            <button class="close-drawer" id="drawer-close">✕</button>
+        </div>
+        <nav class="drawer-nav">
+            <a href="/" class="nav-link active"><b>01</b> WEATHER_DASHBOARD</a>
+            <a href="/health" class="nav-link"><b>02</b> HEALTH_SECTOR</a>
+            <a href="/education" class="nav-link"><b>03</b> EDUCATION_INTEL</a>
+        </nav>
+    </div>
 
     <div class="layout">
         <div class="sidebar" id="city-sidebar"></div>
@@ -810,7 +941,7 @@
 
                 // Ensure history is at least partially populated for the visual even if empty on server
                 let historyData = data.history || [];
-                if (historyData.length === 0 && data.current.length > 0) {
+                if (historyData.length === 0 && data.current.length > 0 && typeof luxon !== 'undefined') {
                     // Create a simulated 3-hour history if server returns none
                     historyData = [];
                     data.current.forEach(c => {
@@ -824,10 +955,13 @@
                     });
                 }
 
-                renderVisuals(data.current, historyData);
-                updateMarkers(data.current);
+                if (data.current && data.current.length > 0) {
+                    renderVisuals(data.current, historyData);
+                    updateMarkers(data.current);
+                }
 
             } catch (e) {
+                console.error("DASHBOARD_UPDATE_ERR", e);
                 document.getElementById('api-error').style.display = 'block';
                 document.getElementById('sync-tag').innerText = 'SECURE LINK FAILURE';
             }
@@ -873,7 +1007,9 @@
         }
 
         function renderVisuals(current, history) {
+            if (!current || current.length === 0) return;
             const sel = current.find(x => x.location_id === selectedId) || current[0];
+            if (!sel) return;
 
             // 1. Radar
             const radarData = {
@@ -987,7 +1123,29 @@
         }
 
         setInterval(update, 3000); // 3 sec heartbeat
-        window.onload = update;
+        window.onload = () => {
+            update();
+            initDrawer();
+        };
+
+        // DRAWER CONTROLS
+        function initDrawer() {
+            const drawer = document.getElementById('drawer');
+            const overlay = document.getElementById('drawer-overlay');
+            const toggle = document.getElementById('drawer-toggle');
+            const close = document.getElementById('drawer-close');
+
+            if (!drawer || !overlay || !toggle || !close) return;
+
+            function toggleDrawer() {
+                drawer.classList.toggle('active');
+                overlay.classList.toggle('active');
+            }
+
+            toggle.onclick = toggleDrawer;
+            close.onclick = toggleDrawer;
+            overlay.onclick = toggleDrawer;
+        }
     </script>
 </body>
 
