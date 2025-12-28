@@ -16,6 +16,14 @@ init_db()
 app = Flask(__name__)
 CORS(app)
 
+# --- CACHE MECHANISM FOR EXTERNAL APIs ---
+DATA_CACHE = {
+    'health_ext': None,
+    'last_sync': datetime.min
+}
+CACHE_TTL = timedelta(minutes=15)
+
+
 class EnhancedEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime):
@@ -110,32 +118,56 @@ def get_health_data():
             
         conn.close()
         
-        # --- OFFICIAL DATA AGGREGATION (Strategic Level) ---
-        
-        # 1. Official Population Estimate (Population.io)
-        # Tries to get the actuarial estimate for "today"
-        pop_official = {}
-        try:
-            pop_url = "https://api.population.io/1.0/population/Yemen/today-and-tomorrow/"
-            pop_resp = requests.get(pop_url, timeout=3)
-            if pop_resp.status_code == 200:
-                p_data = pop_resp.json()
+        # --- CACHED EXTERNAL FETCH ---
+        now = datetime.now()
+        if DATA_CACHE['health_ext'] and (now - DATA_CACHE['last_sync'] < CACHE_TTL):
+            pop_official = DATA_CACHE['health_ext']['pop']
+            reports = DATA_CACHE['health_ext']['reports']
+        else:
+            # 1. Official Population Estimate
+            pop_official = {}
+            try:
+                pop_url = "https://api.population.io/1.0/population/Yemen/today-and-tomorrow/"
+                pop_resp = requests.get(pop_url, timeout=2)
+                if pop_resp.status_code == 200:
+                    p_data = pop_resp.json()
+                    pop_official = {
+                        'total': p_data['total_population'][0]['population'],
+                        'date': p_data['total_population'][0]['date'],
+                        'source': "Population.io / UN DESA"
+                    }
+                else: raise Exception("API Error")
+            except:
                 pop_official = {
-                    'total': p_data['total_population'][0]['population'],
-                    'date': p_data['total_population'][0]['date'],
-                    'source': "Population.io / UN DESA"
+                    'total': data.get('population', {}).get('current', 40000000),
+                    'date': data.get('population', {}).get('year', '2023'),
+                    'source': "World Bank Open Data (Fallback)"
                 }
-            else:
-                raise Exception("API Error")
-        except:
-            # Fallback to WB
-            pop_official = {
-                'total': data.get('population', {}).get('current', 40000000),
-                'date': data.get('population', {}).get('year', '2023'),
-                'source': "World Bank Open Data"
-            }
 
-        # 2. Facility Status (Fixed 2024 HeRAMS Data)
+            # 2. Real-Time Reports (ReliefWeb)
+            reports = []
+            try:
+                rw_url = "https://api.reliefweb.int/v1/reports?appname=yemen-dashboard&preset=latest&limit=6&query[value]=primary_country.name:%22Yemen%22%20AND%20theme.name:%22Health%22"
+                rw_resp = requests.get(rw_url, timeout=2)
+                if rw_resp.status_code == 200:
+                    rw_data = rw_resp.json()
+                    for item in rw_data.get('data', []):
+                        fields = item.get('fields', {})
+                        reports.append({
+                            'title': fields.get('title', 'Unknown Report'),
+                            'source': fields.get('source', [{'name': 'RW'}])[0]['name'],
+                            'date': fields.get('date', {}).get('created', '')[:10],
+                            'url': item.get('href', '#')
+                        })
+                if not reports: raise Exception("Empty")
+            except:
+                reports = [{'title': 'Monitoring active field reports...', 'source': 'System', 'date': 'Tactical', 'url': '#'}]
+
+            # Update Cache
+            DATA_CACHE['health_ext'] = {'pop': pop_official, 'reports': reports}
+            DATA_CACHE['last_sync'] = now
+
+        # 3. Facility Status (Fixed 2024 HeRAMS Data)
         facilities_real = [
             {'governorate': "Sana'a", 'total': 180, 'active': 100, 'partial': 60, 'closed': 20},
             {'governorate': "Aden", 'total': 110, 'active': 65, 'partial': 35, 'closed': 10},
@@ -145,7 +177,7 @@ def get_health_data():
             {'governorate': "Marib", 'total': 90, 'active': 50, 'partial': 30, 'closed': 10}
         ]
 
-        # 3. Key Disease Stats (WHO 2024/2025 Reports)
+        # 4. Key Disease Stats (WHO 2024/2025 Reports)
         disease_stats = {
             'cholera_cases': 249900,
             'cholera_deaths': 1163,
@@ -154,30 +186,13 @@ def get_health_data():
             'last_updated': "Dec 2024"
         }
         
-        # 4. Humanitarian Response Overview (OCHA 2024 HRP)
+        # 5. Humanitarian Response Overview (OCHA 2024 HRP)
         humanitarian_response = {
             'people_in_need': 18200000,
             'targeted': 11200000,
             'reached': 4500000
         }
 
-        # 5. Real-Time Reports (ReliefWeb API)
-        reports = []
-        try:
-            rw_url = "https://api.reliefweb.int/v1/reports?appname=yemen-dashboard&preset=latest&limit=6&query[value]=primary_country.name:%22Yemen%22%20AND%20theme.name:%22Health%22"
-            rw_resp = requests.get(rw_url, timeout=3)
-            if rw_resp.status_code == 200:
-                rw_data = rw_resp.json()
-                for item in rw_data.get('data', []):
-                    fields = item.get('fields', {})
-                    reports.append({
-                        'title': fields.get('title', 'Unknown Report'),
-                        'source': fields.get('source', [{'name': 'RW'}])[0]['name'],
-                        'date': fields.get('date', {}).get('created', '')[:10],
-                        'url': item.get('href', '#')
-                    })
-        except Exception as e:
-            reports.append({'title': 'System Offline: Check Connection', 'source': 'System', 'date': 'Today', 'url': '#'})
 
         extended_data = {
             'facilities': facilities_real,

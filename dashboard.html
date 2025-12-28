@@ -16,59 +16,68 @@
     <style>
         :root {
             /* PREMIUM LIGHT THEME (DEFAULT) */
-            --bg: #f5f7fa;
-            --sidebar-bg: #ffffff;
-            --header-bg: #ffffff;
+            --bg: #f1f5f9;
             --panel: #ffffff;
+            --sidebar-bg: #ffffff;
+            --header-bg: rgba(255, 255, 255, 0.82);
+            --panel-border: rgba(0, 0, 0, 0.08);
             --accent: #0070f3;
             --border: #e1e4e8;
-            --text-main: #1a1a1a;
-            --text-dim: #6a737d;
-            --item-hover: #f6f8fa;
-            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            --map-filter: invert(0) contrast(1);
+            --text-main: #0f172a;
+            --text-mud: #64748b;
+            --item-hover: #f1f5f9;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+            --glow-accent: rgba(0, 112, 243, 0.05);
+            --logo-grad: linear-gradient(90deg, #1e293b, #64748b);
+            --map-filter: brightness(0.9) contrast(1.1) saturate(0.8);
         }
 
         [data-theme="dark"] {
-            /* TACTICAL DARK THEME (ARCHIVE) */
+            /* TACTICAL DARK THEME */
             --bg: #020202;
+            --panel: rgba(13, 17, 23, 0.7);
             --sidebar-bg: #050505;
-            --header-bg: #000000;
-            --panel: #0a0a0a;
+            --header-bg: rgba(0, 0, 0, 0.85);
+            --panel-border: rgba(255, 255, 255, 0.08);
             --accent: #00ffff;
             --border: #1a1a1a;
-            --text-main: #ffffff;
-            --text-dim: #555555;
+            --text-main: #f8fafc;
+            --text-mud: #94a3b8;
             --item-hover: #0a0a0a;
             --card-shadow: none;
-            --map-filter: invert(1) hue-rotate(180deg) brightness(0.6);
+            --glow-accent: rgba(0, 255, 255, 0.15);
+            --logo-grad: linear-gradient(90deg, #fff, #94a3b8);
+            --map-filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Consolas', monospace;
+            font-family: 'Inter', sans-serif;
             color: var(--text-main);
         }
 
         body {
             background: var(--bg);
-            min-height: 100vh;
+            background-image:
+                radial-gradient(circle at 10% 20%, var(--glow-accent) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, var(--glow-accent) 0%, transparent 40%);
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow-x: hidden;
-            overflow-y: auto;
-            transition: background 0.3s, color 0.3s;
+            overflow: hidden;
+            transition: background 0.4s, color 0.4s;
         }
 
         header {
-            height: 50px;
-            border-bottom: 2px solid var(--accent);
+            height: 60px;
+            border-bottom: 1px solid var(--panel-border);
             display: flex;
             align-items: center;
-            padding: 0 20px;
+            padding: 0 30px;
             background: var(--header-bg);
+            backdrop-filter: blur(12px);
             z-index: 100;
             justify-content: space-between;
         }
@@ -76,33 +85,39 @@
         .layout {
             flex: 1;
             display: grid;
-            grid-template-columns: 260px 1fr;
+            grid-template-columns: 280px 1fr;
+            min-height: 0;
+            /* Important for flex child scrolling */
         }
 
         .sidebar {
             background: var(--sidebar-bg);
-            border-right: 1px solid var(--border);
+            border-right: 1px solid var(--panel-border);
             overflow-y: auto;
         }
 
         .city-item {
-            padding: 12px 15px;
-            border-bottom: 1px solid var(--border);
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--panel-border);
             cursor: pointer;
-            transition: 0.2s;
+            transition: all 0.3s;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            color: var(--text-mud);
         }
 
         .city-item:hover {
-            background: var(--item-hover);
-            border-left: 2px solid var(--accent);
+            background: var(--glow-accent);
+            color: var(--text-main);
+            transform: translateX(5px);
         }
 
         .city-item.active {
-            background: var(--item-hover);
+            background: var(--glow-accent);
+            color: var(--accent);
             border-left: 4px solid var(--accent);
+            font-weight: 600;
         }
 
         .main-stage {
@@ -116,10 +131,9 @@
 
         .top-deck {
             display: grid;
-            grid-template-columns: 280px 1fr;
-            gap: 12px;
-            height: 350px;
-            min-height: 350px;
+            grid-template-columns: 320px 1fr;
+            gap: 15px;
+            min-height: 400px;
         }
 
         .stats-col {
@@ -130,44 +144,48 @@
 
         .card {
             background: var(--panel);
-            border: 1px solid var(--border);
-            padding: 10px;
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            padding: 15px;
             text-align: center;
             flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            border-radius: 8px;
-            border-left: 3px solid var(--border);
-            transition: 0.3s;
+            border-radius: 16px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: var(--card-shadow);
         }
 
         .card:hover {
-            border-left-color: var(--accent);
-            transform: translateY(-2px);
+            border-color: var(--accent);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
 
         .card .label {
-            font-size: 0.6rem;
-            color: var(--text-dim);
+            font-size: 0.65rem;
+            color: var(--text-mud);
             text-transform: uppercase;
-            margin-bottom: 4px;
+            margin-bottom: 8px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
         }
 
         .card .val {
-            font-size: 1.2rem;
-            color: var(--accent);
-            font-weight: bold;
+            font-size: 1.6rem;
+            color: var(--text-main);
+            font-weight: 800;
         }
 
         .map-wrapper {
             background: var(--panel);
-            border: 1px solid var(--border);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
             position: relative;
             overflow: hidden;
             height: 100%;
-            border-radius: 4px;
+            border-radius: 16px;
         }
 
         .map-scanner {
@@ -212,40 +230,48 @@
             background: var(--accent);
             color: #fff;
             border: none;
-            padding: 5px 12px;
-            border-radius: 4px;
+            padding: 8px 16px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 0.7rem;
-            font-weight: bold;
+            font-size: 0.75rem;
+            font-weight: 700;
             text-transform: uppercase;
+            transition: all 0.3s;
+        }
+
+        .theme-btn:hover {
+            filter: brightness(1.1);
+            transform: scale(1.05);
         }
 
         .charts-row {
             display: grid;
             grid-template-columns: 1fr 1.2fr 1fr;
-            gap: 12px;
-            height: 260px;
-            min-height: 260px;
+            gap: 15px;
+            min-height: 320px;
         }
 
         .chart-wrap {
             background: var(--panel);
-            border: 1px solid var(--border);
-            padding: 8px;
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            padding: 15px;
             position: relative;
             height: 100%;
             overflow: hidden;
-            border-radius: 4px;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
         }
 
         .timeline-box {
-            height: 180px;
-            min-height: 180px;
+            min-height: 250px;
             background: var(--panel);
-            border: 1px solid var(--border);
-            padding: 8px;
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            padding: 15px;
             overflow: hidden;
-            border-radius: 4px;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
         }
 
         canvas {
@@ -255,8 +281,28 @@
         }
 
         #sync-tag {
-            font-size: 0.7rem;
-            color: #0f0;
+            font-size: 0.72rem;
+            color: var(--accent);
+            opacity: 0.8;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--text-mud);
+            border-radius: 10px;
+            opacity: 0.3;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
         }
 
         .error-banner {
@@ -273,14 +319,15 @@
 
         /* Tactical Tooltip Style */
         .tactical-tooltip {
-            background: rgba(0, 0, 0, 0.85);
-            border: 1px solid var(--accent);
-            color: var(--accent);
-            font-family: 'Consolas', monospace;
-            padding: 5px 10px;
-            font-size: 0.75rem;
-            border-radius: 0;
-            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(8px);
         }
 
         .leaflet-tooltip-pane {
@@ -288,55 +335,57 @@
         }
 
         .marker-pulse {
-            width: 8px;
-            height: 8px;
-            background: #fff;
+            width: 10px;
+            height: 10px;
+            background: var(--accent);
             border-radius: 50%;
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 15px var(--accent);
+            border: 2px solid #fff;
         }
 
         /* INFO ICON ENGINE */
         .info-icon {
             position: absolute;
-            top: 5px;
-            right: 8px;
-            width: 14px;
-            height: 14px;
-            background: #333;
-            border: 1px solid #555;
+            top: 10px;
+            right: 10px;
+            width: 18px;
+            height: 18px;
+            background: var(--glow-accent);
+            border: 1px solid var(--panel-border);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: help;
-            font-size: 10px;
-            font-weight: bold;
+            font-size: 11px;
+            font-weight: 800;
             color: var(--accent);
             z-index: 1001;
-            transition: 0.2s;
+            transition: all 0.3s;
         }
 
         .info-icon:hover {
             background: var(--accent);
-            color: #000;
-            border-color: #fff;
+            color: #fff;
+            transform: scale(1.1);
         }
 
         .info-box {
             position: absolute;
-            top: 25px;
-            right: 0;
-            width: 220px;
-            background: rgba(10, 10, 10, 0.95);
-            border: 1px solid var(--accent);
-            padding: 10px;
-            font-size: 0.7rem;
-            line-height: 1.3;
-            color: #ddd;
+            top: 35px;
+            right: 5px;
+            width: 240px;
+            background: var(--panel);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--panel-border);
+            padding: 15px;
+            font-size: 0.75rem;
+            line-height: 1.5;
+            color: var(--text-mud);
             display: none;
             z-index: 2000;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.8);
-            border-radius: 4px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
         }
 
         .info-icon:hover+.info-box {
@@ -392,27 +441,26 @@
         .drawer {
             position: fixed;
             top: 0;
-            left: -300px;
-            width: 300px;
+            left: -320px;
+            width: 320px;
             height: 100%;
-            background: #050505;
-            border-right: 2px solid var(--accent);
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--panel-border);
             z-index: 2001;
-            transition: left 0.3s ease-in-out;
-            padding: 20px;
-            box-shadow: 10px 0 30px rgba(0, 0, 0, 0.9);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 40px 30px;
             display: flex;
             flex-direction: column;
         }
 
         .drawer.active {
-            left: 0;
+            transform: translateX(320px);
         }
 
         .drawer-header {
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid var(--panel-border);
             padding-bottom: 20px;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -442,28 +490,35 @@
             gap: 15px;
         }
 
-        .nav-link {
+        .drawer-nav a {
+            display: block;
+            padding: 18px 20px;
+            color: var(--text-mud);
             text-decoration: none;
-            color: #aaa;
-            font-size: 1rem;
-            padding: 10px;
-            border-left: 2px solid transparent;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            transition: all 0.3s;
+            font-weight: 500;
         }
 
-        .nav-link:hover,
-        .nav-link.active {
-            color: #fff;
-            background: #111;
-            border-left-color: var(--accent);
+        .drawer-nav a:hover,
+        .drawer-nav a.active {
+            color: var(--text-main);
+            background: var(--glow-accent);
+            transform: translateX(5px);
         }
 
-        .nav-link b {
+        .drawer-nav a.active {
             color: var(--accent);
-            font-size: 0.8rem;
+            background: var(--glow-accent);
+            box-shadow: inset 0 0 20px rgba(0, 112, 243, 0.05);
+            font-weight: 700;
+        }
+
+        .drawer-nav a b {
+            font-size: 0.7rem;
+            opacity: 0.5;
+            margin-right: 12px;
         }
     </style>
 </head>
@@ -476,9 +531,8 @@
             <div class="logo">ATMOS-ALPHA // TACTICAL_ISR_GRID v11.0</div>
         </div>
         <div style="display:flex; align-items:center; gap:20px;">
-            <div id="sync-tag">SYNC: ACTIVE</div>
-            <button class="theme-btn" onclick="toggleTheme()"
-                style="background:var(--accent); color:#fff; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:0.65rem;">THEME</button>
+            <div id="sync-tag" style="font-weight: 800; letter-spacing: 1px;">SYNC: ACTIVE</div>
+            <button class="theme-btn" onclick="toggleTheme()">THEME</button>
         </div>
     </header>
 
@@ -489,9 +543,9 @@
             <button class="close-drawer" id="drawer-close">✕</button>
         </div>
         <nav class="drawer-nav">
-            <a href="/" class="nav-link active"><b>01</b> WEATHER_DASHBOARD</a>
-            <a href="/health" class="nav-link"><b>02</b> HEALTH_SECTOR</a>
-            <a href="/education" class="nav-link"><b>03</b> EDUCATION_INTEL</a>
+            <a href="/" class="active"><b>01</b> WEATHER_DASHBOARD</a>
+            <a href="/health"><b>02</b> HEALTH_SECTOR</a>
+            <a href="/education"><b>03</b> EDUCATION_INTEL</a>
         </nav>
     </div>
 
@@ -840,10 +894,14 @@
 
         async function initMap() {
             if (map) return;
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             map = L.map('map', { zoomControl: false, attributionControl: false }).setView([15.5, 48.0], 6);
 
-            // CLEAN DARK TILES
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+            const tileLayer = isDark
+                ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+
+            L.tileLayer(tileLayer).addTo(map);
 
             // FETCH TACTICAL SHADING (Governorates)
             try {
@@ -967,10 +1025,11 @@
                             c.city_name === mappedName ||
                             normalizeName(c.city_name) === normGov
                         );
+                        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
                         return {
-                            fillColor: city ? getTempColor(city.temperature) : '#111',
+                            fillColor: city ? getTempColor(city.temperature) : (isDark ? '#111' : '#eee'),
                             weight: city ? 2.5 : 1,
-                            color: city ? '#fff' : '#333',
+                            color: city ? (isDark ? '#fff' : '#333') : (isDark ? '#333' : '#ccc'),
                             fillOpacity: city ? 0.6 : 0.05
                         };
                     });
@@ -1006,6 +1065,7 @@
                 console.error("DASHBOARD_UPDATE_ERR", e);
                 document.getElementById('api-error').style.display = 'block';
                 document.getElementById('sync-tag').innerText = 'SECURE LINK FAILURE';
+                document.getElementById('sync-tag').style.color = 'var(--danger)';
             }
         }
 
@@ -1053,6 +1113,14 @@
             const sel = current.find(x => x.location_id === selectedId) || current[0];
             if (!sel) return;
 
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+            const tickColor = isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)';
+
+            Chart.defaults.color = tickColor;
+            Chart.defaults.borderColor = gridColor;
+            Chart.defaults.font.family = "'Inter', sans-serif";
+
             // 1. Radar
             const radarData = {
                 labels: ['Heat', 'Wind', 'Hum', 'Cloud', 'UV'],
@@ -1063,7 +1131,16 @@
                     borderColor: '#00ffff', borderWidth: 2
                 }]
             };
-            draw('radarChart', 'radar', radarData, { scales: { r: { grid: { color: '#222' }, angleLines: { color: '#222' }, ticks: { display: false } } } });
+            draw('radarChart', 'radar', radarData, {
+                scales: {
+                    r: {
+                        grid: { color: gridColor },
+                        angleLines: { color: gridColor },
+                        ticks: { display: false },
+                        suggestedMax: 40
+                    }
+                }
+            });
 
             // 2. UV Polar Chart
             const polarData = {
@@ -1087,8 +1164,8 @@
             draw('polarChart', 'polarArea', polarData, {
                 scales: {
                     r: {
-                        grid: { color: '#1a1a1a' },
-                        angleLines: { color: '#1a1a1a' },
+                        grid: { color: gridColor },
+                        angleLines: { color: gridColor },
                         suggestedMax: 10,
                         ticks: { display: false }
                     }
@@ -1109,7 +1186,8 @@
                 labels: barLabels,
                 datasets: [{ label: 'Cloud Cover %', data: current.slice(0, 8).map(x => x.cloud_cover), backgroundColor: 'rgba(0,255,255,0.7)' }]
             };
-            draw('barChart', 'bar', barData, { indexAxis: 'y', scales: { x: { grid: { color: '#111' } }, y: { grid: { display: false } } } });
+
+            draw('barChart', 'bar', barData, { indexAxis: 'y', scales: { x: { grid: { color: gridColor }, ticks: { color: tickColor } }, y: { grid: { display: false }, ticks: { color: tickColor } } } });
 
             // 4. Line
             const historyNames = [...new Set(history.map(h => h.city_name))];
@@ -1137,12 +1215,12 @@
                         time: { unit: 'hour', displayFormats: { hour: 'HH:mm' } },
                         min: luxon.DateTime.now().minus({ hours: 3 }).toISO(),
                         max: luxon.DateTime.now().toISO(),
-                        grid: { color: '#111' },
-                        ticks: { color: '#444', font: { size: 9 } }
+                        grid: { color: gridColor },
+                        ticks: { color: tickColor, font: { size: 9 } }
                     },
                     y: {
-                        grid: { color: '#111' },
-                        ticks: { color: '#444', font: { size: 9 } }
+                        grid: { color: gridColor },
+                        ticks: { color: tickColor, font: { size: 9 } }
                     }
                 },
                 plugins: {
@@ -1173,7 +1251,7 @@
             localStorage.setItem('theme', newTheme);
 
             // Re-render
-            update();
+            location.reload();
         }
 
         // Init theme
