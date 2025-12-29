@@ -468,7 +468,8 @@
         <div style="margin-bottom:30px; color:var(--accent);">Directory</div>
         <a href="/">METEO_COMMAND</a>
         <a href="/health">HEALTH_SECTOR</a>
-        <a href="/education" class="active">EDUCATION_OPS</a>
+        <a href="/education" class="active"><b>03</b> EDUCATION_INTEL</a>
+        <a href="/economy"><b>04</b> ECONOMIC_GRID</a>
     </div>
 
     <div class="container">
@@ -607,6 +608,15 @@
             </div>
         </div>
 
+        <!-- NEW: LATEST FIELD REPORTS -->
+        <div class="card col-4" style="min-height: 150px; background: rgba(5, 150, 105, 0.03);">
+            <div class="card-header" style="color: var(--accent);">LATEST SECTOR REPORTS (FIELD_INTEL)</div>
+            <div id="edu-reports-list"
+                style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 10px;">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -636,6 +646,7 @@
                 const res = await fetch('/api/education');
                 const json = await res.json();
                 if (json.status === 'success') {
+                    window.latestReports = json.reports;
                     renderCharts(json.nrt);
                     document.getElementById('loader').style.display = 'none';
                     document.getElementById('status-line').innerText = "LIVE STREAM: " + json.meta.timestamp;
@@ -722,12 +733,25 @@
             document.getElementById('lbl-risk').innerText = d.dropout_risk.level;
 
             // 8. Map Markers
-            // Clear markers if needed or just add new ones (Leaflet layer group would be better but this is simple)
             d.school_map.forEach(p => {
                 const color = p.status === 'Open' ? '#00ffa3' : (p.status === 'Closed' ? '#ff3366' : '#ffb800');
                 L.circleMarker([p.lat, p.lon], { radius: 6, weight: 2, color: color, fillColor: color, fillOpacity: 0.4 }).addTo(map)
                     .bindPopup(`<b>${p.name}</b><br>Status: ${p.status}`);
             });
+
+            // 9. EDU REPORTS
+            const reportList = document.getElementById('edu-reports-list');
+            if (reportList && window.latestReports) {
+                reportList.innerHTML = '';
+                window.latestReports.forEach(r => {
+                    reportList.innerHTML += `
+                        <div style="padding:10px; border-left: 2px solid var(--accent); background: var(--panel);">
+                            <div style="font-size: 0.6rem; color: var(--text-mud); font-weight: 800;">${r.date}</div>
+                            <div style="font-size: 0.75rem; font-weight: 600; margin-top: 3px; color: var(--text-main);">${r.title}</div>
+                        </div>
+                    `;
+                });
+            }
         }
 
         // THEME TOGGLE

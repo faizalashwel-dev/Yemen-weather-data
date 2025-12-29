@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MACRO_ECONOMICS // STRATEGIC_FINANCE_GRID</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            /* PREMIUM LIGHT THEME (DEFAULT) */
+            --bg: #f1f5f9;
+            --panel: #ffffff;
+            --panel-border: rgba(0, 0, 0, 0.08);
+            --header-bg: rgba(255, 255, 255, 0.82);
+            --accent: #10b981;
+            --accent-dim: rgba(16, 185, 129, 0.1);
+            --border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-dim: #64748b;
+            --glow-accent: rgba(16, 185, 129, 0.05);
+            --logo-grad: linear-gradient(90deg, #1e293b, #64748b);
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+            --alert: #f59e0b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        [data-theme="dark"] {
+            /* TACTICAL DARK THEME */
+            --bg: #020202;
+            --panel: rgba(13, 17, 23, 0.7);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --header-bg: rgba(0, 0, 0, 0.85);
+            --accent: #00e676;
+            --accent-dim: rgba(0, 230, 118, 0.2);
+            --border: #1a1a1a;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --glow-accent: rgba(0, 230, 118, 0.15);
+            --logo-grad: linear-gradient(90deg, #fff, #94a3b8);
+            --card-shadow: none;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+        }
+
+        body {
+            background: var(--bg);
+            background-image:
+                radial-gradient(circle at 10% 20%, var(--glow-accent) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, var(--glow-accent) 0%, transparent 40%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            font-size: 14px;
+            transition: background 0.4s, color 0.4s;
+        }
+
+        /* HEADER */
+        header {
+            height: 60px;
+            border-bottom: 1px solid var(--panel-border);
+            display: flex;
+            align-items: center;
+            padding: 0 30px;
+            background: var(--header-bg);
+            backdrop-filter: blur(12px);
+            justify-content: space-between;
+            z-index: 100;
+        }
+
+        .logo {
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            font-size: 1rem;
+            background: var(--logo-grad);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-badge {
+            font-size: 0.7rem;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-shadow: 0 0 5px var(--accent-dim);
+        }
+
+        /* LAYOUT */
+        .container {
+            flex: 1;
+            min-height: 0;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-auto-rows: minmax(130px, auto);
+            gap: 15px;
+            max-width: 1800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .hud-container {
+            grid-column: span 4;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 5px;
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            min-height: 200px;
+        }
+
+        /* Top Border Accent */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent), transparent);
+            opacity: 0.5;
+            z-index: 10;
+        }
+
+        .card-title {
+            color: var(--text-dim);
+            font-size: 0.65rem;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+
+        .metric-value {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: var(--text-main);
+            margin-bottom: 5px;
+        }
+
+        .metric-sub {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* GRID SPANS */
+        .col-2 {
+            grid-column: span 2;
+        }
+
+        .col-3 {
+            grid-column: span 3;
+        }
+
+        .col-4 {
+            grid-column: span 4;
+        }
+
+        .row-2 {
+            grid-row: span 2;
+        }
+
+        /* DRAWER */
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .drawer-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .drawer {
+            position: fixed;
+            top: 0;
+            left: -320px;
+            width: 320px;
+            height: 100%;
+            background: var(--panel);
+            backdrop-filter: blur(16px);
+            border-right: 1px solid var(--panel-border);
+            z-index: 2001;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 40px 30px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .drawer.active {
+            transform: translateX(320px);
+        }
+
+        .drawer-nav a {
+            display: block;
+            padding: 18px 20px;
+            color: var(--text-dim);
+            text-decoration: none;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .drawer-nav a:hover,
+        .drawer-nav a.active {
+            color: var(--text-main);
+            background: var(--glow-accent);
+            transform: translateX(5px);
+        }
+
+        .drawer-nav a.active {
+            color: var(--accent);
+            background: var(--glow-accent);
+            box-shadow: inset 0 0 20px var(--accent-dim);
+            font-weight: 700;
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            color: var(--accent);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+            margin-right: 15px;
+        }
+
+        /* TICKER */
+        .ticker-val {
+            font-family: 'Consolas', monospace;
+            font-weight: bold;
+        }
+
+        .trend-up {
+            color: var(--success);
+        }
+
+        .trend-down {
+            color: var(--danger);
+        }
+
+        .live-indicator {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background-color: var(--accent);
+            border-radius: 50%;
+            margin-left: 8px;
+            animation: blink 0.6s infinite ease-in-out alternate;
+            box-shadow: 0 0 8px var(--accent);
+        }
+
+        @keyframes blink {
+            0% {
+                opacity: 0.4;
+                transform: scale(0.8);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1.2);
+                box-shadow: 0 0 12px var(--accent);
+            }
+        }
+
+        /* Compact Metrics for Split Card */
+        .metric-split-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--panel-border);
+        }
+
+        .metric-split-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        .metric-split-val {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-main);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .metric-split-label {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .hud-card {
+            min-height: 100px;
+            padding: 12px 15px;
+            justify-content: center;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hud-card .metric-value {
+            font-size: 1.8rem;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div style="display: flex; align-items: center;">
+            <button class="menu-btn" id="drawer-toggle">☰</button>
+            <div class="logo">FINANCE_SYNDROME // <span style="color:var(--accent)">ECONOMIC_GRID</span></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="status-badge" id="system-status">MARKET CONNECTING...</div>
+            <button onclick="toggleTheme()"
+                style="background:var(--accent); color:#fff; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:0.65rem; font-weight:bold;">THEME</button>
+        </div>
+    </header>
+
+    <div class="drawer-overlay" id="drawer-overlay"></div>
+    <div class="drawer" id="drawer">
+        <div
+            style="border-bottom: 1px solid var(--panel-border); padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between;">
+            <div style="color:var(--accent); font-weight:800; letter-spacing:1px;">COMMAND_MENU</div>
+            <button id="drawer-close"
+                style="background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:1.2rem;">✕</button>
+        </div>
+        <nav class="drawer-nav">
+            <a href="/"><b>01</b> WEATHER_DASHBOARD</a>
+            <a href="/health"><b>02</b> HEALTH_SECTOR</a>
+            <a href="/education"><b>03</b> EDUCATION_INTEL</a>
+            <a href="/economy" class="active"><b>04</b> ECONOMIC_GRID</a>
+        </nav>
+    </div>
+
+    <!-- MAIN DASHBOARD CONTENT -->
+    <div class="container">
+
+        <!-- ROW 1: STRATEGIC INDICATORS (HUD) -->
+        <div class="hud-container">
+            <div class="hud-card">
+                <div class="card-title">NOMINAL GDP <span class="live-indicator"></span></div>
+                <div class="metric-value ticker-val" id="val-gdp">--</div>
+                <div class="metric-sub">
+                    <span style="color:var(--danger)">CONTRACTING</span>
+                </div>
+            </div>
+
+            <div class="hud-card">
+                <div class="card-title">INFLATION <span class="live-indicator"></span></div>
+                <div class="metric-value ticker-val" id="val-inf" style="color:var(--danger)">--</div>
+                <div class="metric-sub">
+                    CPI AVG • 2025
+                </div>
+            </div>
+
+            <div class="hud-card">
+                <div class="card-title">GOLD (XAU) <span class="live-indicator"></span></div>
+                <div class="metric-value ticker-val" id="val-gold">--</div>
+                <div class="metric-sub">
+                    <span id="chg-gold">--%</span> • GLOBAL
+                </div>
+            </div>
+
+            <div class="hud-card">
+                <div class="card-title">EXCHANGE RATES <span class="live-indicator"></span></div>
+                <div class="metric-split-row" style="border-top:none; margin-top:0;">
+                    <div class="metric-split-item" style="border-right:1px solid var(--panel-border)">
+                        <div class="metric-split-val" id="val-aden">--</div>
+                        <div class="metric-split-label">ADEN</div>
+                    </div>
+                    <div class="metric-split-item">
+                        <div class="metric-split-val" id="val-sanaa">--</div>
+                        <div class="metric-split-label">SANA'A</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ROW 2 & 3: MAIN VISUALS -->
+
+        <!-- Left Big Chart -->
+        <div class="card col-2 row-2">
+            <div class="card-title">EXCHANGE DIVERGENCE <span class="live-indicator"></span></div>
+            <div style="position: relative; flex: 1; min-height: 0;">
+                <canvas id="chart-div"></canvas>
+            </div>
+        </div>
+
+        <!-- Right Top Wrap -->
+        <div class="card col-2">
+            <div class="card-title">FOOD BASKET COST <span class="live-indicator"></span></div>
+            <div style="position: relative; flex: 1; min-height: 0;">
+                <canvas id="chart-food"></canvas>
+            </div>
+        </div>
+
+        <!-- Right Bottom Charts -->
+        <div class="card">
+            <div class="card-title">PURCHASING POWER <span class="live-indicator"></span></div>
+            <div style="font-size:0.65rem; color:var(--text-dim); margin-bottom:2px;">SALARY COVERAGE %</div>
+            <div style="position: relative; flex: 1; min-height: 0;">
+                <canvas id="chart-pp"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">UNEMPLOYMENT <span class="live-indicator"></span></div>
+            <div style="font-size:0.65rem; color:var(--text-dim); margin-bottom:2px;">% LABOR FORCE</div>
+            <div style="position: relative; flex: 1; min-height: 0;">
+                <canvas id="chart-unemp"></canvas>
+            </div>
+        </div>
+
+        <!-- ROW 4: EXTERNAL & SUMMARY -->
+        <div class="card col-2">
+            <div class="card-title">FX RESERVES <span class="live-indicator"></span></div>
+            <div style="font-size:0.65rem; color:var(--text-dim); margin-bottom:2px;">IMPORT COVER ($BN)</div>
+            <div style="position: relative; flex: 1; min-height: 0;">
+                <canvas id="chart-fx"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">TRADE BALANCE <span class="live-indicator"></span></div>
+            <div style="font-size:0.65rem; color:var(--text-dim); margin-bottom:2px;">EXP vs IMP ($BN)</div>
+            <div style="position: relative; flex: 1; min-height: 0;">
+                <canvas id="chart-trade"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">PUBLIC DEBT <span class="live-indicator"></span></div>
+            <div style="font-size:0.65rem; color:var(--text-dim); margin-bottom:2px;">% OF GDP</div>
+            <div style="position: relative; flex: 1; min-height: 0;">
+                <canvas id="chart-debt"></canvas>
+            </div>
+        </div>
+
+        <div class="card col-4" style="min-height: auto; flex-direction: row; align-items: center; gap: 20px;">
+            <div class="card-title" style="margin-bottom:0; width: 150px;">2025 SUMMARY <span
+                    class="live-indicator"></span></div>
+            <div
+                style="padding: 5px 10px; font-size: 0.8rem; color: var(--text-dim); display: flex; gap: 30px; flex: 1; align-items: center;">
+                <p><b style="color:var(--text-main)">FX Crisis:</b> Aden/Sana'a gap widens. Reserves <span
+                        style="color:var(--danger)">critical</span>.</p>
+                <p><b style="color:var(--text-main)">Debt:</b> Surges to 84% GDP.</p>
+                <p><b style="color:var(--text-main)">Social:</b> PP collapses. Salaries cover <45% food.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Drawer Logic
+        const drawerID = document.getElementById('drawer');
+        const overlayID = document.getElementById('drawer-overlay');
+        document.getElementById('drawer-toggle').onclick = () => { drawerID.classList.toggle('active'); overlayID.classList.toggle('active'); };
+        document.getElementById('drawer-close').onclick = () => { drawerID.classList.remove('active'); overlayID.classList.remove('active'); };
+        overlayID.onclick = () => { drawerID.classList.remove('active'); overlayID.classList.remove('active'); };
+
+        let charts = {};
+
+        async function init() {
+            try {
+                const res = await fetch('/api/economy');
+                const json = await res.json();
+
+                if (json.status === 'success') {
+                    renderDashboard(json);
+
+                    document.getElementById('system-status').innerText = "LIVE MARKET LINKED";
+                    document.getElementById('system-status').style.color = "var(--success)";
+                    document.getElementById('system-status').style.borderColor = "var(--success)";
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function renderDashboard(d) {
+            const mkt = d.market;
+            const ch = d.charts;
+
+            // Helper to safely set text
+            const setText = (id, text) => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = text;
+            };
+
+            // 1. Cards
+            setText('val-gdp', "$" + mkt.gdp.value + " BN");
+            setText('val-inf', mkt.inflation.value + "%");
+
+            setText('val-gold', "$" + mkt.gold.current.toFixed(1));
+            updateChangeColor('chg-gold', mkt.gold.change);
+
+            // COMPOSITE EXCHANGE CARD
+            setText('val-aden', mkt.yer_aden.current.toLocaleString());
+            setText('val-sanaa', mkt.yer_sanaa.current);
+
+            // Re-purposing change elements for gap/trend indication
+            const adenChg = mkt.yer_aden.change;
+            const adenEl = document.getElementById('chg-aden');
+            if (adenEl) {
+                adenEl.innerText = (adenChg > 0 ? "+" : "") + adenChg + "%";
+                adenEl.style.color = adenChg > 0 ? 'var(--danger)' : 'var(--success)';
+            }
+
+            setText('chg-sanaa', "Fixed");
+
+            // 2. Charts 
+            // Check if chart elements exist before rendering
+            if (document.getElementById('chart-div')) {
+                renderMultiLineChart('chart-div', ch.divergence.labels,
+                    [{ label: 'Aden', data: ch.divergence.aden, color: '#ef4444' },
+                    { label: 'Sana\'a', data: ch.divergence.sanaa, color: '#3b82f6' }]
+                );
+            }
+
+            if (document.getElementById('chart-food')) renderAreaChart('chart-food', ch.food.labels, ch.food.values, 'Cost', '#10b981');
+            if (document.getElementById('chart-pp')) renderBarChart('chart-pp', ch.pp_history.labels, ch.pp_history.values, '#f59e0b');
+            if (document.getElementById('chart-unemp')) renderBarChart('chart-unemp', ch.unemp.labels, ch.unemp.values, '#ef4444');
+            if (document.getElementById('chart-trade')) renderDoubleBarChart('chart-trade', ch.trade.labels, ch.trade.exports, ch.trade.imports);
+            if (document.getElementById('chart-fx')) renderAreaChart('chart-fx', ch.fx.labels, ch.fx.values, 'Reserves', '#3b82f6');
+            if (document.getElementById('chart-debt')) renderAreaChart('chart-debt', ch.debt.labels, ch.debt.values, 'Debt %', '#ef4444');
+        }
+
+        function updateChangeColor(id, val) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.innerText = (val > 0 ? "+" : "") + val + "%";
+                el.style.color = val > 0 ? 'var(--danger)' : 'var(--success)';
+            }
+        }
+
+        // --- CHART WRAPPERS ---
+        function renderMultiLineChart(id, labels, datasets) {
+            const ctx = document.getElementById(id).getContext('2d');
+            if (charts[id]) charts[id].destroy();
+
+            charts[id] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: datasets.map(ds => ({
+                        label: ds.label,
+                        data: ds.data,
+                        borderColor: ds.color,
+                        backgroundColor: ds.color,
+                        tension: 0.3,
+                        borderWidth: 3,
+                        pointRadius: 4
+                    }))
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        y: { grid: { color: 'var(--panel-border)' }, ticks: { color: 'var(--text-dim)' } },
+                        x: { grid: { display: false }, ticks: { color: 'var(--text-dim)' } }
+                    },
+                    plugins: { legend: { labels: { color: 'var(--text-main)' } } }
+                }
+            });
+        }
+
+        function renderAreaChart(id, labels, data, label, color = '#10b981') {
+            const ctx = document.getElementById(id).getContext('2d');
+            if (charts[id]) charts[id].destroy();
+
+            // Adjust opacity for fill based on input or default green
+            let bg;
+            if (color === '#10b981') bg = 'rgba(16, 185, 129, 0.1)';
+            else if (color === '#3b82f6') bg = 'rgba(59, 130, 246, 0.1)';
+            else if (color === '#ef4444') bg = 'rgba(239, 68, 68, 0.1)';
+            else bg = 'rgba(16, 185, 129, 0.1)';
+
+            charts[id] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: label,
+                        data: data,
+                        borderColor: color,
+                        backgroundColor: bg,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: 'var(--panel-border)' }, ticks: { color: 'var(--text-dim)' } },
+                        x: { grid: { display: false }, ticks: { color: 'var(--text-dim)' } }
+                    }
+                }
+            });
+        }
+
+        function renderBarChart(id, labels, data, color) {
+            const ctx = document.getElementById(id).getContext('2d');
+            if (charts[id]) charts[id].destroy();
+
+            charts[id] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Value',
+                        data: data,
+                        backgroundColor: color,
+                        borderRadius: 6,
+                        barThickness: 50
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: 'var(--panel-border)' }, ticks: { color: 'var(--text-dim)' } },
+                        x: { grid: { display: false }, ticks: { color: 'var(--text-dim)' } }
+                    }
+                }
+            });
+        }
+
+        function renderDoubleBarChart(id, labels, exp, imp) {
+            const ctx = document.getElementById(id).getContext('2d');
+            if (charts[id]) charts[id].destroy();
+
+            charts[id] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Exports', data: exp, backgroundColor: '#10b981', borderRadius: 4 },
+                        { label: 'Imports', data: imp, backgroundColor: '#ef4444', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: 'var(--text-main)' } } },
+                    scales: {
+                        y: { grid: { color: 'var(--panel-border)' }, ticks: { color: 'var(--text-dim)' } },
+                        x: { grid: { display: false }, ticks: { color: 'var(--text-dim)' } }
+                    }
+                }
+            });
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme') || 'light';
+            const next = current === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            setTimeout(() => location.reload(), 100);
+        }
+
+        (function () {
+            const saved = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', saved);
+        })();
+
+        window.onload = () => {
+            init();
+            setInterval(init, 30000);
+        };
+    </script>
+</body>
+
+</html>

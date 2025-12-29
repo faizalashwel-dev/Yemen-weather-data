@@ -99,3 +99,81 @@ VALUES (
         '2024',
         '[{"year": "2023", "value": 39000000}, {"year": "2024", "value": 40000000}]'
     );
+-- Education Indicators Table
+CREATE TABLE IF NOT EXISTS education_indicators (
+    indicator_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    indicator_key TEXT NOT NULL UNIQUE,
+    current_value REAL,
+    year_updated TEXT,
+    history_json TEXT,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+-- Education Reports Table (Shared for Health too, but we can have specific ones)
+CREATE TABLE IF NOT EXISTS situation_reports (
+    report_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sector TEXT NOT NULL,
+    -- 'health' or 'education'
+    title TEXT NOT NULL,
+    source TEXT,
+    date_published TEXT,
+    url TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(url)
+);
+-- Seed Education Indicators
+INSERT
+    OR IGNORE INTO education_indicators (
+        indicator_key,
+        current_value,
+        year_updated,
+        history_json
+    )
+VALUES (
+        'literacy_rate',
+        54.1,
+        '2023',
+        '[{"year": "2021", "value": 53.5}, {"year": "2022", "value": 53.8}, {"year": "2023", "value": 54.1}]'
+    ),
+    (
+        'primary_enrollment',
+        72.4,
+        '2023',
+        '[{"year": "2021", "value": 70.1}, {"year": "2022", "value": 71.5}, {"year": "2023", "value": 72.4}]'
+    ),
+    ('schools_damaged', 2424, '2025', '[]');
+-- Economic Indicators Table
+CREATE TABLE IF NOT EXISTS economic_indicators (
+    indicator_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    indicator_key TEXT NOT NULL UNIQUE,
+    current_value REAL,
+    year_updated TEXT,
+    history_json TEXT,
+    -- JSON list of {"year": "YYYY", "value": X}
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+-- Seed Economic Indicators
+INSERT
+    OR IGNORE INTO economic_indicators (
+        indicator_key,
+        current_value,
+        year_updated,
+        history_json
+    )
+VALUES (
+        'gdp_annual_growth',
+        -2.0,
+        '2023',
+        '[{"year": "2021", "value": -1.0}, {"year": "2022", "value": 0.5}, {"year": "2023", "value": -2.0}]'
+    ),
+    (
+        'inflation_rate',
+        15.0,
+        '2023',
+        '[{"year": "2021", "value": 30.0}, {"year": "2022", "value": 20.0}, {"year": "2023", "value": 15.0}]'
+    ),
+    (
+        'unemployment_rate',
+        13.5,
+        '2023',
+        '[{"year": "2021", "value": 13.2}, {"year": "2022", "value": 13.4}, {"year": "2023", "value": 13.5}]'
+    );
