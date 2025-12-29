@@ -68,10 +68,10 @@
                 radial-gradient(circle at 10% 20%, var(--glow-accent) 0%, transparent 40%),
                 radial-gradient(circle at 90% 80%, var(--glow-accent) 0%, transparent 40%);
             color: var(--text-main);
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow-x: hidden;
             transition: background 0.4s, color 0.4s;
         }
 
@@ -98,25 +98,43 @@
             -webkit-text-fill-color: transparent;
         }
 
-        /* Drawer */
+        /* UNIFIED DRAWER SYSTEM */
         .drawer {
             position: fixed;
             top: 0;
             left: -320px;
             width: 320px;
             height: 100%;
-            background: var(--drawer-bg);
+            background: var(--panel);
+            backdrop-filter: blur(16px);
             border-right: 1px solid var(--panel-border);
-            z-index: 2000;
+            z-index: 2001;
             transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             padding: 40px 30px;
+            display: flex;
+            flex-direction: column;
         }
 
         .drawer.active {
             transform: translateX(320px);
         }
 
-        .drawer a {
+        .drawer-header {
+            border-bottom: 1px solid var(--panel-border);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .drawer-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .drawer-nav a {
             display: block;
             padding: 18px 20px;
             color: var(--text-mud);
@@ -124,20 +142,28 @@
             border-radius: 12px;
             margin-bottom: 8px;
             transition: all 0.3s;
-            font-weight: 500;
+            font-weight: 600;
+            font-size: 0.85rem;
         }
 
-        .drawer a:hover,
-        .drawer a.active {
+        .drawer-nav a:hover,
+        .drawer-nav a.active {
             color: var(--text-main);
             background: var(--glow-accent);
             transform: translateX(5px);
         }
 
-        .drawer a.active {
-            background: var(--glow-accent);
+        .drawer-nav a.active {
             color: var(--accent);
-            box-shadow: inset 0 0 20px rgba(0, 255, 163, 0.1);
+            background: var(--glow-accent);
+            box-shadow: inset 0 0 20px var(--glow-accent);
+            font-weight: 700;
+        }
+
+        .drawer-nav a b {
+            color: var(--accent);
+            font-size: 0.8rem;
+            margin-right: 10px;
         }
 
         .overlay {
@@ -146,9 +172,9 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(4px);
-            z-index: 1500;
+            z-index: 2000;
             display: none;
             opacity: 0;
             transition: opacity 0.3s;
@@ -162,14 +188,11 @@
         /* Layout */
         .container {
             flex: 1;
-            min-height: 0;
             padding: 20px;
-            overflow-y: auto;
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             grid-auto-rows: minmax(130px, auto);
-            /* Reduced from 180px */
-            gap: 15px;
+            gap: 20px;
             scroll-behavior: smooth;
             max-width: 1600px;
             margin: 0 auto;
@@ -441,6 +464,110 @@
             font-weight: 600;
             letter-spacing: 2px;
         }
+
+        /* RESPONSIVE DESIGN */
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .hud-container {
+                grid-column: span 2;
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .col-4,
+            .col-2 {
+                grid-column: span 2;
+            }
+
+            .row-2 {
+                grid-row: span 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            header {
+                padding: 0 15px;
+                height: auto;
+                min-height: 60px;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .logo {
+                font-size: 0.8rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .container {
+                grid-template-columns: repeat(2, 1fr);
+                padding: 15px 10px;
+                gap: 15px;
+            }
+
+            .card {
+                grid-column: span 2 !important;
+                width: 100% !important;
+                min-height: 120px;
+                padding: 20px;
+                height: auto;
+            }
+
+            .hud-container {
+                grid-column: span 2 !important;
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 12px !important;
+                margin-bottom: 10px;
+            }
+
+            .hud-card,
+            .metric-card-half {
+                grid-column: span 1 !important;
+                min-height: 110px !important;
+                padding: 15px !important;
+            }
+
+            .col-4,
+            .col-2,
+            .chart-card {
+                grid-column: span 2 !important;
+            }
+
+            .chart-container {
+                height: 300px !important;
+                min-height: 250px !important;
+            }
+
+            #map {
+                height: 400px !important;
+            }
+
+            .metric-big {
+                font-size: 2rem;
+            }
+
+            .card-header {
+                font-size: 0.75rem;
+                margin-bottom: 15px;
+            }
+
+            #val-risk {
+                font-size: 3.5rem !important;
+            }
+
+            #edu-reports-list {
+                grid-template-columns: 1fr !important;
+                gap: 12px;
+            }
+
+            .hide-mobile {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 
@@ -463,13 +590,20 @@
         </div>
     </header>
 
-    <div class="overlay" id="ol"></div>
-    <div class="drawer" id="dr">
-        <div style="margin-bottom:30px; color:var(--accent);">Directory</div>
-        <a href="/">METEO_COMMAND</a>
-        <a href="/health">HEALTH_SECTOR</a>
-        <a href="/education" class="active"><b>03</b> EDUCATION_INTEL</a>
-        <a href="/economy"><b>04</b> ECONOMIC_GRID</a>
+    <div class="overlay" id="drawer-overlay" onclick="toggleDrawer()"></div>
+    <div class="drawer" id="drawer">
+        <div class="drawer-header">
+            <div style="color:var(--text-main); font-weight:800; letter-spacing:1px; font-size: 0.9rem;">
+                STRATEGIC_DIRECTORY</div>
+            <button id="drawer-close" onclick="toggleDrawer()"
+                style="background:none; border:none; color:var(--text-mud); cursor:pointer; font-size:1.2rem;">✕</button>
+        </div>
+        <nav class="drawer-nav">
+            <a href="/"><b>01</b> WEATHER_COMMAND</a>
+            <a href="/health"><b>02</b> HEALTH_SECTOR</a>
+            <a href="/education" class="active"><b>03</b> EDUCATION_INTEL</a>
+            <a href="/economy"><b>04</b> ECONOMIC_GRID</a>
+        </nav>
     </div>
 
     <div class="container">
@@ -518,7 +652,7 @@
         </div>
 
         <!-- ROW 3 Right Half: Two Numerical Charts -->
-        <div class="card">
+        <div class="card metric-card-half">
             <div class="card-header">TEACHING CAPACITY</div>
             <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; position: relative;">
                 <div class="chart-signal info" style="top:0; right:0;"></div>
@@ -536,7 +670,7 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="card metric-card-half">
             <div class="card-header">PAYROLL STATUS</div>
             <div class="status-grid"
                 style="display: flex; flex-direction: column; gap: 8px; flex: 1; justify-content: center; position: relative;">
@@ -557,23 +691,24 @@
         </div>
 
         <!-- ROW 4: Dropout Risk (Wide) -->
-        <div class="card col-4" style="min-height: 120px;">
+        <div class="card col-4">
             <div class="card-header">SYSTEMIC DROPOUT RISK INDEX</div>
             <div
-                style="flex:1; display:flex; align-items:center; justify-content:space-around; gap: 20px; position: relative;">
+                style="flex:1; display:flex; align-items:center; justify-content:space-around; gap: 20px; position: relative; flex-wrap: wrap; padding: 10px 0;">
                 <div class="chart-signal danger" style="top:0; right:0;"></div>
-                <div style="text-align: center;">
+                <div style="text-align: center; min-width: 100px;">
                     <div style="font-size:3.5rem; font-weight:800; color:var(--danger); line-height: 1;" id="val-risk">
                         --</div>
                     <div style="font-size:0.7rem; font-weight: 600; letter-spacing:2px; color:var(--text-mud); margin-top: 5px;"
                         id="lbl-risk">CRITICAL</div>
                 </div>
-                <div style="width: 1px; height: 60px; background: var(--panel-border);"></div>
-                <div style="max-width: 500px; font-size: 0.85rem; color: var(--text-mud); line-height: 1.5;">
+                <div style="width: 1px; height: 60px; background: var(--panel-border);" class="hide-mobile"></div>
+                <div
+                    style="max-width: 500px; font-size: 0.85rem; color: var(--text-mud); line-height: 1.5; flex: 1; min-width: 250px;">
                     <b style="color: var(--danger);">ALERT:</b> System-wide dropout risk has exceeded the 2025 stability
                     threshold. Primary drivers include fuel scarcity and regional displacement in central zones.
                 </div>
-                <div style="display: flex; gap: 10px;">
+                <div style="display: flex; gap: 10px; justify-content: center; width: 100%;" class="hide-mobile">
                     <div
                         style="padding: 15px; border-radius: 12px; border: 1px solid var(--panel-border); background: var(--glow-accent); text-align: center;">
                         <div style="font-size: 1.2rem; font-weight: 700; color: var(--danger);">+12%</div>
@@ -584,7 +719,7 @@
         </div>
 
         <!-- ROW 5: LINE CHARTS -->
-        <div class="card">
+        <div class="card chart-card">
             <div class="card-header">ACTIVE SCHOOLS TREND</div>
             <div class="chart-container">
                 <div class="chart-signal"></div>
@@ -592,7 +727,7 @@
             </div>
         </div>
 
-        <div class="card col-2">
+        <div class="card col-2 chart-card">
             <div class="card-header">ATTENDANCE VS ABSENCE</div>
             <div class="chart-container">
                 <div class="chart-signal info"></div>
@@ -600,7 +735,7 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="card chart-card">
             <div class="card-header">SCHOOLS CLOSED (ROLLING)</div>
             <div class="chart-container">
                 <div class="chart-signal danger"></div>
@@ -609,7 +744,7 @@
         </div>
 
         <!-- NEW: LATEST FIELD REPORTS -->
-        <div class="card col-4" style="min-height: 150px; background: rgba(5, 150, 105, 0.03);">
+        <div class="card col-4" style="background: rgba(5, 150, 105, 0.03);">
             <div class="card-header" style="color: var(--accent);">LATEST SECTOR REPORTS (FIELD_INTEL)</div>
             <div id="edu-reports-list"
                 style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 10px;">
@@ -621,10 +756,10 @@
 
     <script>
         // Drawer Logic
-        const drawer = document.getElementById('dr');
-        const overlay = document.getElementById('ol');
-        function toggleDrawer() { drawer.classList.toggle('active'); overlay.classList.toggle('active'); }
-        overlay.onclick = toggleDrawer;
+        function toggleDrawer() {
+            document.getElementById('drawer').classList.toggle('active');
+            document.getElementById('drawer-overlay').classList.toggle('active');
+        }
 
         // Init Map
         const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
